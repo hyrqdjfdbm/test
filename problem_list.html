@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问题清单管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.3.9/dist/index.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.3.9/dist/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 顶部筛选栏 */
+        .header-bar {
+            background: #fff;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            margin-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .date-filter label {
+            font-weight: 500;
+            color: #303133;
+        }
+
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quick-btn {
+            padding: 6px 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            color: #606266;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: #f5f7fa;
+            border-color: #409EFF;
+            color: #409EFF;
+        }
+
+        .quick-btn.active {
+            background: #409EFF;
+            border-color: #409EFF;
+            color: #fff;
+        }
+
+        .week-range {
+            font-size: 13px;
+            color: #909399;
+            margin-left: 8px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .action-btn.primary {
+            background: #409EFF;
+            color: #fff;
+        }
+
+        .action-btn.primary:hover {
+            background: #66b1ff;
+        }
+
+        .action-btn.default {
+            background: #fff;
+            color: #606266;
+            border: 1px solid #dcdfe6;
+        }
+
+        .action-btn.default:hover {
+            background: #f5f7fa;
+        }
+
+        /* 标签切换 */
+        .tabs {
+            display: flex;
+            gap: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f2f6fc;
+        }
+
+        .tab-item {
+            font-size: 14px;
+            font-weight: 500;
+            color: #909399;
+            cursor: pointer;
+            padding-bottom: 8px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-item.active {
+            color: #409EFF;
+            border-bottom-color: #409EFF;
+        }
+
+        /* 列表区域 */
+        .list-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f2f6fc;
+        }
+
+        .list-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #303133;
+        }
+
+        .batch-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .batch-actions label {
+            font-size: 13px;
+            color: #606266;
+            cursor: pointer;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #f2f6fc;
+        }
+
+        .data-table th {
+            background: #fafafa;
+            font-weight: 600;
+            color: #606266;
+            white-space: nowrap;
+        }
+
+        .data-table tr:hover {
+            background: #fafafa;
+        }
+
+        .data-table .row-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row-action {
+            color: #409EFF;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .row-action:hover {
+            text-decoration: underline;
+        }
+
+        .row-action.disabled {
+            color: #c0c4cc;
+            cursor: not-allowed;
+        }
+
+        .row-action.disabled:hover {
+            text-decoration: none;
+        }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f2f6fc;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #303133;
+        }
+
+        .modal-close {
+            font-size: 20px;
+            color: #909399;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(80vh - 120px);
+        }
+
+        .modal-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 3px solid #409EFF;
+        }
+
+        .section-desc {
+            font-size: 13px;
+            color: #909399;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e4e7ed;
+            border-radius: 4px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f2f6fc;
+            cursor: pointer;
+        }
+
+        .checkbox-item:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox-item:hover {
+            background: #fafafa;
+        }
+
+        .checkbox-item input {
+            margin-right: 10px;
+        }
+
+        .checkbox-item .item-content {
+            flex: 1;
+            font-size: 13px;
+            color: #303133;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 20px;
+            border-top: 1px solid #f2f6fc;
+        }
+
+        /* 编辑弹窗 */
+        .edit-form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .form-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-item label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #606266;
+            margin-bottom: 6px;
+        }
+
+        .form-item input,
+        .form-item select,
+        .form-item textarea {
+            padding: 8px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #303133;
+        }
+
+        .form-item textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-item.full-width {
+            grid-column: span 2;
+        }
+
+        /* 历史记录弹窗 */
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid #f2f6fc;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .history-editor {
+            font-size: 13px;
+            font-weight: 500;
+            color: #303133;
+        }
+
+        .history-time {
+            font-size: 12px;
+            color: #909399;
+        }
+
+        .history-content {
+            font-size: 13px;
+            color: #606266;
+            line-height: 1.6;
+        }
+
+        /* 状态标签 */
+        .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-tag.running {
+            background: #f0f9eb;
+            color: #67c23a;
+        }
+
+        .status-tag.pending {
+            background: #fef9e7;
+            color: #e6a23c;
+        }
+
+        .status-tag.stopped {
+            background: #fef0f0;
+            color: #f56c6c;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #909399;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- 顶部筛选栏 -->
+        <div class="header-bar">
+            <div class="header-top">
+                <div class="date-filter">
+                    <label>选择周：</label>
+                    <el-date-picker
+                            v-model="selectedWeek"
+                            type="week"
+                            format="yyyy年第ww周"
+                            placeholder="选择周"
+                            :disabled-date="disabledDate"
+                            @change="onWeekChange"
+                        ></el-date-picker>
+                    <div class="quick-btns">
+                        <button 
+                            class="quick-btn" 
+                            :class="{active: quickWeek === 'thisWeek'}"
+                            @click="setWeek('thisWeek')"
+                        >本周</button>
+                        <button 
+                            class="quick-btn" 
+                            :class="{active: quickWeek === 'lastWeek'}"
+                            @click="setWeek('lastWeek')"
+                        >上周</button>
+                    </div>
+                    <span class="week-range">{{ weekRangeText }}</span>
+                </div>
+                <div class="action-btns">
+                    <button class="action-btn primary" @click="showImportModal = true">导入上一期</button>
+                    <button class="action-btn default" @click="showMoveInModal = true">移入</button>
+                    <button class="action-btn default" @click="batchMoveOut" :disabled="selectedRows.length === 0">批量移出</button>
+                </div>
+            </div>
+            <div class="tabs">
+                <div 
+                    class="tab-item" 
+                    :class="{active: activeTab === 'social'}"
+                    @click="activeTab = 'social'"
+                >社会投资</div>
+                <div 
+                    class="tab-item" 
+                    :class="{active: activeTab === 'government'}"
+                    @click="activeTab = 'government'"
+                >政府投资</div>
+                <div 
+                    class="tab-item" 
+                    :class="{active: activeTab === 'other'}"
+                    @click="activeTab = 'other'"
+                >其他</div>
+            </div>
+        </div>
+
+        <!-- 问题清单列表 -->
+        <div class="list-container">
+            <div class="list-header">
+                <span class="list-title">{{ activeTabName }}问题清单</span>
+                <div class="batch-actions">
+                    <label>
+                        <input type="checkbox" @change="toggleSelectAll">
+                        全选
+                    </label>
+                    <span>已选 {{ selectedRows.length }} 项</span>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" @change="toggleSelectAll">
+                            </th>
+                            <th v-for="col in currentColumns" :key="col.key" :style="{width: col.width}">
+                                {{ col.label }}
+                            </th>
+                            <th style="width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, index) in currentList" :key="item.id">
+                            <td>
+                                <input 
+                                    type="checkbox" 
+                                    :checked="selectedRows.includes(item.id)"
+                                    @change="toggleRowSelect(item.id)"
+                                >
+                            </td>
+                            <td v-for="col in currentColumns" :key="col.key">
+                                <template v-if="col.key === '序号'">{{ index + 1 }}</template>
+                                <template v-else-if="col.key === '项目状态'">
+                                    <span class="status-tag" :class="getStatusClass(item[col.key])">
+                                        {{ item[col.key] }}
+                                    </span>
+                                </template>
+                                <template v-else>{{ item[col.key] || '-' }}</template>
+                            </td>
+                            <td>
+                                <div class="row-actions">
+                                    <span 
+                                        class="row-action" 
+                                        :class="{disabled: item.locked}"
+                                        @click="editItem(item)"
+                                    >编辑</span>
+                                    <span 
+                                        class="row-action" 
+                                        @click="toggleLock(item)"
+                                    >{{ item.locked ? '解锁' : '锁定' }}</span>
+                                    <span class="row-action" @click="showHistory(item)">历史记录</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-if="currentList.length === 0" class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">暂无数据</div>
+            </div>
+        </div>
+
+        <!-- 导入上一期弹窗 -->
+        <div class="modal-overlay" :class="{show: showImportModal}">
+            <div class="modal" style="max-width: 1200px;">
+                <div class="modal-header">
+                    <div class="modal-title">导入上一期数据</div>
+                    <span class="modal-close" @click="showImportModal = false">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <!-- 区域一：本周已消失的问题 -->
+                    <div class="modal-section">
+                        <div class="section-title">本周已消失的问题</div>
+                        <div class="section-desc">上一期快照中存在、但本周快照中不存在的问题（即"已经没有了"的）</div>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="font-size: 12px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <input type="checkbox" @change="toggleSelectAllDisappeared">
+                                        </th>
+                                        <th style="width: 50px;">序号</th>
+                                        <th style="width: 80px;">分类</th>
+                                        <th style="width: 100px;">纳统归属</th>
+                                        <th style="width: 150px;">项目名称</th>
+                                        <th style="width: 120px;">建设单位</th>
+                                        <th style="width: 100px;">总投资(万元)</th>
+                                        <th style="width: 120px;">{{ activeTab === 'social' ? '年度纳统目标' : '2026年固投目标' }}(万元)</th>
+                                        <th style="width: 80px;">项目状态</th>
+                                        <th style="width: 200px;">存在问题</th>
+                                        <th style="width: 100px;">问题分类</th>
+                                        <th style="width: 100px;">责任主体</th>
+                                        <th style="width: 100px;">解决部门</th>
+                                        <th style="width: 100px;">备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(item, index) in disappearedProblems" :key="item.id">
+                                        <td>
+                                            <input 
+                                                type="checkbox" 
+                                                v-model="disappearedSelected" 
+                                                :value="item.id"
+                                            >
+                                        </td>
+                                        <td>{{ index + 1 }}</td>
+                                        <td>{{ item.category || '-' }}</td>
+                                        <td>{{ item.stat归属 || '-' }}</td>
+                                        <td>{{ item.projectName }}</td>
+                                        <td>{{ item.constructionUnit || '-' }}</td>
+                                        <td>{{ item.totalInvestment || '-' }}</td>
+                                        <td>{{ item.targetInvestment || '-' }}</td>
+                                        <td>{{ item.status || '-' }}</td>
+                                        <td>{{ item.problem }}</td>
+                                        <td>{{ item.problemCategory || '-' }}</td>
+                                        <td>{{ item.responsibleEntity || '-' }}</td>
+                                        <td>{{ item.solutionDept || '-' }}</td>
+                                        <td>{{ item.remark || '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div v-if="disappearedProblems.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+                            暂无已消失的问题
+                        </div>
+                    </div>
+                    <!-- 区域二：本周已存在的问题 -->
+                    <div class="modal-section">
+                        <div class="section-title">本周已存在的问题</div>
+                        <div class="section-desc">上一期快照中存在、且本周快照中也存在的问题（即"未消失"）</div>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="font-size: 12px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <input type="checkbox" @change="toggleSelectAllExisting">
+                                        </th>
+                                        <th style="width: 50px;">序号</th>
+                                        <th style="width: 80px;">分类</th>
+                                        <th style="width: 100px;">纳统归属</th>
+                                        <th style="width: 150px;">项目名称</th>
+                                        <th style="width: 120px;">建设单位</th>
+                                        <th style="width: 100px;">总投资(万元)</th>
+                                        <th style="width: 120px;">{{ activeTab === 'social' ? '年度纳统目标' : '2026年固投目标' }}(万元)</th>
+                                        <th style="width: 80px;">项目状态</th>
+                                        <th style="width: 200px;">存在问题</th>
+                                        <th style="width: 100px;">问题分类</th>
+                                        <th style="width: 100px;">责任主体</th>
+                                        <th style="width: 100px;">解决部门</th>
+                                        <th style="width: 100px;">备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(item, index) in existingProblems" :key="item.id">
+                                        <td>
+                                            <input 
+                                                type="checkbox" 
+                                                v-model="existingSelected" 
+                                                :value="item.id"
+                                            >
+                                        </td>
+                                        <td>{{ index + 1 }}</td>
+                                        <td>{{ item.category || '-' }}</td>
+                                        <td>{{ item.stat归属 || '-' }}</td>
+                                        <td>{{ item.projectName }}</td>
+                                        <td>{{ item.constructionUnit || '-' }}</td>
+                                        <td>{{ item.totalInvestment || '-' }}</td>
+                                        <td>{{ item.targetInvestment || '-' }}</td>
+                                        <td>{{ item.status || '-' }}</td>
+                                        <td>{{ item.problem }}</td>
+                                        <td>{{ item.problemCategory || '-' }}</td>
+                                        <td>{{ item.responsibleEntity || '-' }}</td>
+                                        <td>{{ item.solutionDept || '-' }}</td>
+                                        <td>{{ item.remark || '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div v-if="existingProblems.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+                            暂无已存在的问题
+                        </div>
+                        <div style="margin-top: 12px; font-size: 13px; color: #909399;">
+                            <label style="margin-right: 20px;">
+                                <input type="radio" v-model="importMode" value="skip"> 跳过重复
+                            </label>
+                            <label>
+                                <input type="radio" v-model="importMode" value="overwrite"> 覆盖
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="action-btn default" @click="showImportModal = false">取消</button>
+                    <button class="action-btn primary" @click="confirmImport">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 移入弹窗 -->
+        <div class="modal-overlay" :class="{show: showMoveInModal}">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">移入问题</div>
+                    <span class="modal-close" @click="showMoveInModal = false">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="section-title">问题池（未关联到本周{{ activeTabName }}的问题）</div>
+                    <div class="checkbox-list">
+                        <div 
+                            v-for="item in problemPool" 
+                            :key="item.id" 
+                            class="checkbox-item"
+                        >
+                            <input 
+                                type="checkbox" 
+                                v-model="moveInSelected" 
+                                :value="item.id"
+                            >
+                            <div class="item-content">
+                                <div style="font-weight: 500;">{{ item.projectName }}</div>
+                                <div style="color: #909399; font-size: 12px;">{{ item.problem }}</div>
+                            </div>
+                        </div>
+                        <div v-if="problemPool.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+                            问题池中暂无未关联的问题
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="action-btn default" @click="showMoveInModal = false">取消</button>
+                    <button class="action-btn primary" @click="confirmMoveIn">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 编辑弹窗 -->
+        <div class="modal-overlay" :class="{show: showEditModal}">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">编辑问题</div>
+                    <span class="modal-close" @click="showEditModal = false">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <!-- 显示项目基本信息（只读） -->
+                    <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f2f6fc;">
+                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">项目信息</div>
+                        <div style="font-size: 13px; color: #606266;">
+                            <div>项目名称：{{ editForm.projectName }}</div>
+                            <div>建设单位：{{ editForm.constructionUnit || '-' }}</div>
+                            <div>项目状态：{{ editForm.status || '-' }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 可编辑的存在问题字段 -->
+                    <div class="form-item full-width">
+                        <label>存在问题</label>
+                        <textarea 
+                            v-model="editForm.problem" 
+                            placeholder="请输入存在问题..."
+                            style="min-height: 120px;"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="action-btn default" @click="showEditModal = false">取消</button>
+                    <button class="action-btn primary" @click="confirmEdit">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 历史记录弹窗 -->
+        <div class="modal-overlay" :class="{show: showHistoryModal}">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">编辑历史记录</div>
+                    <span class="modal-close" @click="showHistoryModal = false">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="history-list">
+                        <div v-for="(record, index) in currentHistory" :key="index" class="history-item">
+                            <div class="history-header">
+                                <span class="history-editor">{{ record.editor }}</span>
+                                <span class="history-time">{{ record.time }}</span>
+                            </div>
+                            <div class="history-content">{{ record.content }}</div>
+                        </div>
+                        <div v-if="currentHistory.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+                            暂无编辑记录
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="action-btn primary" @click="showHistoryModal = false">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                // 当前选中的周
+                const selectedWeek = ref('');
+                const quickWeek = ref('thisWeek');
+                
+                // 当前标签页
+                const activeTab = ref('social');
+                
+                // 选中的行
+                const selectedRows = ref([]);
+                
+                // 弹窗状态
+                const showImportModal = ref(false);
+                const showMoveInModal = ref(false);
+                const showEditModal = ref(false);
+                const showHistoryModal = ref(false);
+                
+                // 导入相关
+                const disappearedSelected = ref([]);
+                const existingSelected = ref([]);
+                const importMode = ref('skip');
+                
+                // 移入相关
+                const moveInSelected = ref([]);
+                
+                // 编辑表单
+                const editForm = ref({});
+                const editingItem = ref(null);
+                
+                // 当前历史记录
+                const currentHistory = ref([]);
+                
+                // 社会投资列
+                const socialColumns = [
+                    {key: '序号', label: '序号', width: '60px'},
+                    {key: 'category', label: '分类', width: '80px'},
+                    {key: 'stat归属', label: '纳统归属', width: '100px'},
+                    {key: 'projectName', label: '项目名称', width: '150px'},
+                    {key: 'constructionUnit', label: '建设单位', width: '120px'},
+                    {key: 'totalInvestment', label: '总投资（万元）', width: '120px'},
+                    {key: 'targetInvestment', label: '年度纳统目标（万元）', width: '150px'},
+                    {key: 'status', label: '项目状态', width: '80px'},
+                    {key: 'problem', label: '存在问题', width: '200px'},
+                    {key: 'problemCategory', label: '问题分类', width: '100px'},
+                    {key: 'responsibleEntity', label: '责任主体', width: '100px'},
+                    {key: 'solutionDept', label: '解决部门', width: '100px'},
+                    {key: 'remark', label: '备注', width: '120px'},
+                ];
+                
+                // 政府投资/其他列
+                const govColumns = [
+                    {key: '序号', label: '序号', width: '60px'},
+                    {key: 'category', label: '分类', width: '80px'},
+                    {key: 'stat归属', label: '纳统归属', width: '100px'},
+                    {key: 'projectName', label: '项目名称', width: '150px'},
+                    {key: 'constructionUnit', label: '建设单位', width: '120px'},
+                    {key: 'totalInvestment', label: '总投资（万元）', width: '120px'},
+                    {key: 'targetInvestment', label: '2026年固投目标（万元）', width: '160px'},
+                    {key: 'status', label: '项目状态', width: '80px'},
+                    {key: 'problem', label: '存在问题', width: '200px'},
+                    {key: 'problemCategory', label: '问题分类', width: '100px'},
+                    {key: 'responsibleEntity', label: '责任主体', width: '100px'},
+                    {key: 'solutionDept', label: '解决部门', width: '100px'},
+                    {key: 'remark', label: '备注', width: '120px'},
+                ];
+                
+                // 模拟数据
+                const socialList = ref([
+                    {id: 1, category: '工业', stat归属: '规上工业', projectName: '智能制造产业园', constructionUnit: 'XX科技有限公司', totalInvestment: 50000, targetInvestment: 20000, status: '在建', problem: '资金缺口较大，融资进展缓慢', problemCategory: '资金问题', responsibleEntity: '企业', solutionDept: '金融办', remark: '需加快融资进度', locked: false},
+                    {id: 2, category: '服务业', stat归属: '服务业', projectName: '商业综合体项目', constructionUnit: 'XX置业有限公司', totalInvestment: 80000, targetInvestment: 30000, status: '待开工', problem: '消防审批未通过，需补充材料', problemCategory: '审批问题', responsibleEntity: '企业', solutionDept: '消防支队', remark: '', locked: true},
+                    {id: 3, category: '工业', stat归属: '规上工业', projectName: '新能源电池生产基地', constructionUnit: 'XX能源有限公司', totalInvestment: 120000, targetInvestment: 50000, status: '在建', problem: '电力管线未接通，影响施工', problemCategory: '配套问题', responsibleEntity: '供电公司', solutionDept: '供电局', remark: '预计5月初接通', locked: false},
+                ]);
+                
+                const governmentList = ref([
+                    {id: 101, category: '基础设施', stat归属: '政府投资', projectName: '城市道路改造工程', constructionUnit: '市住建局', totalInvestment: 30000, targetInvestment: 15000, status: '在建', problem: '部分路段拆迁未完成', problemCategory: '征收问题', responsibleEntity: '属地政府', solutionDept: '征收办', remark: '', locked: false},
+                    {id: 102, category: '民生工程', stat归属: '政府投资', projectName: '新建学校项目', constructionUnit: '市教育局', totalInvestment: 25000, targetInvestment: 10000, status: '待开工', problem: '用地指标未落实', problemCategory: '用地问题', responsibleEntity: '自然资源局', solutionDept: '自然资源局', remark: '正在协调', locked: false},
+                ]);
+                
+                const otherList = ref([
+                    {id: 201, category: '其他', stat归属: '其他', projectName: '老旧小区改造项目', constructionUnit: '街道办', totalInvestment: 5000, targetInvestment: 3000, status: '在建', problem: '居民意见分歧较大', problemCategory: '协调问题', responsibleEntity: '街道办', solutionDept: '街道办', remark: '正在协商', locked: false},
+                ]);
+                
+                // 问题池数据
+                const problemPool = ref([
+                    {id: 301, projectName: '智慧园区项目', problem: '规划调整中，暂无法开工'},
+                    {id: 302, projectName: '物流仓储中心', problem: '环评审批待通过'},
+                    {id: 303, projectName: '文化广场项目', problem: '设计方案需优化'},
+                ]);
+                
+                // 上一期数据
+                const disappearedProblems = ref([
+                    {id: 401, category: '工业', stat归属: '规上工业', projectName: '旧厂房改造项目', constructionUnit: 'XX实业有限公司', totalInvestment: 15000, targetInvestment: 8000, status: '已完工', problem: '已完成改造，问题已解决', problemCategory: '已解决', responsibleEntity: '企业', solutionDept: '工信局', remark: '项目已完成'},
+                    {id: 402, category: '基础设施', stat归属: '政府投资', projectName: '绿化提升工程', constructionUnit: '市园林局', totalInvestment: 3000, targetInvestment: 3000, status: '已完工', problem: '已完工验收', problemCategory: '已解决', responsibleEntity: '市园林局', solutionDept: '住建局', remark: '验收通过'},
+                ]);
+                
+                const existingProblems = ref([
+                    {id: 1, category: '工业', stat归属: '规上工业', projectName: '智能制造产业园', constructionUnit: 'XX科技有限公司', totalInvestment: 50000, targetInvestment: 20000, status: '在建', problem: '资金缺口较大，融资进展缓慢', problemCategory: '资金问题', responsibleEntity: '企业', solutionDept: '金融办', remark: '需加快融资进度'},
+                    {id: 101, category: '基础设施', stat归属: '政府投资', projectName: '城市道路改造工程', constructionUnit: '市住建局', totalInvestment: 30000, targetInvestment: 15000, status: '在建', problem: '部分路段拆迁未完成', problemCategory: '征收问题', responsibleEntity: '属地政府', solutionDept: '征收办', remark: '正在推进'},
+                ]);
+                
+                // 计算属性
+                const activeTabName = computed(() => {
+                    const names = {social: '社会投资', government: '政府投资', other: '其他'};
+                    return names[activeTab.value];
+                });
+                
+                const currentColumns = computed(() => {
+                    return activeTab.value === 'social' ? socialColumns : govColumns;
+                });
+                
+                const currentList = computed(() => {
+                    const lists = {social: socialList, government: governmentList, other: otherList};
+                    return lists[activeTab.value].value;
+                });
+                
+                const weekRangeText = computed(() => {
+                    if (!selectedWeek.value) return '';
+                    const date = new Date(selectedWeek.value);
+                    const day = date.getDay();
+                    const monday = new Date(date);
+                    monday.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+                    return `${formatDate(monday)} - ${formatDate(sunday)}`;
+                });
+                
+                // 方法
+                function formatDate(date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+                
+                function setWeek(type) {
+                    quickWeek.value = type;
+                    const now = new Date();
+                    let days = 0;
+                    if (type === 'thisWeek') days = 0;
+                    else if (type === 'lastWeek') days = -7;
+                    else if (type === 'nextWeek') days = 7;
+                    const date = new Date(now);
+                    date.setDate(now.getDate() + days);
+                    selectedWeek.value = date.toISOString().split('T')[0];
+                }
+                
+                function disabledDate(date) {
+                    // 允许选择未来日期，只禁用过去超过一年的日期
+                    const oneYearAgo = new Date();
+                    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                    return date < oneYearAgo;
+                }
+                
+                function onWeekChange() {
+                    quickWeek.value = '';
+                }
+                
+                function toggleSelectAll(e) {
+                    const checked = e.target.checked;
+                    if (checked) {
+                        selectedRows.value = currentList.value.map(item => item.id);
+                    } else {
+                        selectedRows.value = [];
+                    }
+                }
+                
+                function toggleRowSelect(id) {
+                    const index = selectedRows.value.indexOf(id);
+                    if (index > -1) {
+                        selectedRows.value.splice(index, 1);
+                    } else {
+                        selectedRows.value.push(id);
+                    }
+                }
+                
+                function toggleSelectAllDisappeared(e) {
+                    const checked = e.target.checked;
+                    if (checked) {
+                        disappearedSelected.value = disappearedProblems.value.map(item => item.id);
+                    } else {
+                        disappearedSelected.value = [];
+                    }
+                }
+                
+                function toggleSelectAllExisting(e) {
+                    const checked = e.target.checked;
+                    if (checked) {
+                        existingSelected.value = existingProblems.value.map(item => item.id);
+                    } else {
+                        existingSelected.value = [];
+                    }
+                }
+                
+                function editItem(item) {
+                    if (item.locked) return;
+                    editingItem.value = item;
+                    editForm.value = {...item};
+                    showEditModal.value = true;
+                }
+                
+                function confirmEdit() {
+                    const index = currentList.value.findIndex(item => item.id === editingItem.value.id);
+                    if (index > -1) {
+                        // 添加历史记录
+                        const history = {
+                            editor: '当前用户',
+                            time: new Date().toLocaleString(),
+                            content: `修改了项目信息：${editForm.value.projectName}`
+                        };
+                        if (!currentList.value[index].history) {
+                            currentList.value[index].history = [];
+                        }
+                        currentList.value[index].history.unshift(history);
+                        
+                        // 更新数据
+                        Object.assign(currentList.value[index], editForm.value);
+                    }
+                    showEditModal.value = false;
+                    alert('编辑成功！');
+                }
+                
+                function toggleLock(item) {
+                    if (item.locked) {
+                        item.locked = false;
+                        alert('已解锁，该问题现在可以编辑');
+                    } else {
+                        if (confirm('锁定后该问题不可编辑，确定要锁定吗？')) {
+                            item.locked = true;
+                        }
+                    }
+                }
+                
+                function showHistory(item) {
+                    currentHistory.value = item.history || [];
+                    showHistoryModal.value = true;
+                }
+                
+                function batchMoveOut() {
+                    if (selectedRows.value.length === 0) return;
+                    if (confirm(`确定要移出选中的 ${selectedRows.value.length} 个问题吗？`)) {
+                        const list = currentList.value;
+                        selectedRows.value.forEach(id => {
+                            const index = list.findIndex(item => item.id === id);
+                            if (index > -1) {
+                                list.splice(index, 1);
+                            }
+                        });
+                        selectedRows.value = [];
+                        alert('移出成功！');
+                    }
+                }
+                
+                function confirmImport() {
+                    const modeText = importMode.value === 'skip' ? '跳过重复' : '覆盖';
+                    alert(`导入成功！\n消失问题导入：${disappearedSelected.value.length} 条\n存在问题导入：${existingSelected.value.length} 条\n模式：${modeText}`);
+                    showImportModal.value = false;
+                }
+                
+                function confirmMoveIn() {
+                    if (moveInSelected.value.length === 0) {
+                        alert('请选择要移入的问题');
+                        return;
+                    }
+                    moveInSelected.value.forEach(id => {
+                        const item = problemPool.value.find(p => p.id === id);
+                        if (item) {
+                            currentList.value.push({
+                                id: item.id,
+                                category: '',
+                                stat归属: '',
+                                projectName: item.projectName,
+                                constructionUnit: '',
+                                totalInvestment: '',
+                                targetInvestment: '',
+                                status: '待开工',
+                                problem: item.problem,
+                                problemCategory: '',
+                                responsibleEntity: '',
+                                solutionDept: '',
+                                remark: '',
+                                locked: false,
+                                history: []
+                            });
+                            const index = problemPool.value.findIndex(p => p.id === id);
+                            if (index > -1) {
+                                problemPool.value.splice(index, 1);
+                            }
+                        }
+                    });
+                    moveInSelected.value = [];
+                    showMoveInModal.value = false;
+                    alert('移入成功！');
+                }
+                
+                function getStatusClass(status) {
+                    const classes = {'在建': 'running', '待开工': 'pending', '已停工': 'stopped'};
+                    return classes[status] || '';
+                }
+                
+                // 初始化
+                setWeek('thisWeek');
+                // 默认全选已消失和已存在的问题
+                disappearedSelected.value = disappearedProblems.value.map(item => item.id);
+                existingSelected.value = existingProblems.value.map(item => item.id);
+                
+                return {
+                    selectedWeek,
+                    quickWeek,
+                    activeTab,
+                    selectedRows,
+                    showImportModal,
+                    showMoveInModal,
+                    showEditModal,
+                    showHistoryModal,
+                    disappearedSelected,
+                    existingSelected,
+                    importMode,
+                    moveInSelected,
+                    editForm,
+                    editingItem,
+                    currentHistory,
+                    socialColumns,
+                    govColumns,
+                    socialList,
+                    governmentList,
+                    otherList,
+                    problemPool,
+                    disappearedProblems,
+                    existingProblems,
+                    activeTabName,
+                    currentColumns,
+                    currentList,
+                    weekRangeText,
+                    setWeek,
+                    onWeekChange,
+                    toggleSelectAll,
+                    toggleRowSelect,
+                    editItem,
+                    confirmEdit,
+                    toggleLock,
+                    showHistory,
+                    batchMoveOut,
+                    confirmImport,
+                    confirmMoveIn,
+                    getStatusClass
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
