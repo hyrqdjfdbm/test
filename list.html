@@ -311,6 +311,19 @@
             margin-bottom: 12px;
         }
 
+        .section-title-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        .section-title-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
         .export-section {
             margin-bottom: 20px;
             padding: 12px;
@@ -544,7 +557,7 @@
                     >其他</div>
                 </div>
                 <div class="action-btns">
-                    <button class="action-btn primary" @click="showImportModal = true">导入上一期</button>
+                    <button class="action-btn primary" @click="openImportModal">导入上一期</button>
                     <button class="action-btn primary" @click="showMoveInModal = true">移入</button>
                     <button class="action-btn" :class="selectedRows.length > 0 ? 'primary' : 'default'" @click="batchMoveOut" :disabled="selectedRows.length === 0">批量移出</button>
                 </div>
@@ -631,7 +644,7 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 40px;">
-                                            <input type="checkbox" @change="toggleSelectAllDisappeared">
+                                            <input type="checkbox" :checked="disappearedSelected.length === disappearedProblems.length" @change="toggleSelectAllDisappeared($event)">
                                         </th>
                                         <th style="width: 50px;">序号</th>
                                         <th style="width: 80px;">分类</th>
@@ -687,7 +700,7 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 40px;">
-                                            <input type="checkbox" @change="toggleSelectAllExisting">
+                                            <input type="checkbox" :checked="existingSelected.length === existingProblems.length" @change="toggleSelectAllExisting($event)">
                                         </th>
                                         <th style="width: 50px;">序号</th>
                                         <th style="width: 80px;">分类</th>
@@ -816,16 +829,6 @@
                     <span class="modal-close" @click="showEditModal = false">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <!-- 显示项目基本信息（只读） -->
-                    <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f2f6fc;">
-                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">项目信息</div>
-                        <div style="font-size: 13px; color: #606266;">
-                            <div>项目名称：{{ editForm.projectName }}</div>
-                            <div>建设单位：{{ editForm.constructionUnit || '-' }}</div>
-                            <div>项目状态：{{ editForm.status || '-' }}</div>
-                        </div>
-                    </div>
-                    
                     <!-- 可编辑的存在问题字段 -->
                     <div class="form-item full-width">
                         <label>存在问题</label>
@@ -1300,21 +1303,28 @@
                     }
                 }
                 
+                function openImportModal() {
+                    showImportModal.value = true;
+                    // 打开弹窗时默认全选
+                    disappearedSelected.value = [...disappearedProblems.value.map(item => item.id)];
+                    existingSelected.value = [...existingProblems.value.map(item => item.id)];
+                }
+                
                 function toggleSelectAllDisappeared(e) {
                     const checked = e.target.checked;
                     if (checked) {
-                        disappearedSelected.value = disappearedProblems.value.map(item => item.id);
+                        disappearedSelected.value = [...disappearedProblems.value.map(item => item.id)];
                     } else {
-                        disappearedSelected.value = [];
+                        disappearedSelected.value.splice(0, disappearedSelected.value.length);
                     }
                 }
                 
                 function toggleSelectAllExisting(e) {
                     const checked = e.target.checked;
                     if (checked) {
-                        existingSelected.value = existingProblems.value.map(item => item.id);
+                        existingSelected.value = [...existingProblems.value.map(item => item.id)];
                     } else {
-                        existingSelected.value = [];
+                        existingSelected.value.splice(0, existingSelected.value.length);
                     }
                 }
                 
@@ -1570,6 +1580,7 @@
                     weekRangeText,
                     setWeek,
                     onWeekChange,
+                    openImportModal,
                     toggleSelectAll,
                     toggleRowSelect,
                     editItem,
