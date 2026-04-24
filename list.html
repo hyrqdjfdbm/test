@@ -40,14 +40,43 @@
             justify-content: space-between;
             align-items: center;
             padding-bottom: 16px;
-            border-bottom: 1px solid #f2f6fc;
+            border-bottom: 1px solid #ebeef5;
             margin-bottom: 16px;
+        }
+        
+        .action-btns-header {
+            display: flex;
+            gap: 12px;
         }
 
         .date-filter {
             display: flex;
             align-items: center;
             gap: 12px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box label {
+            font-weight: 500;
+            color: #303133;
+        }
+
+        .search-box input {
+            padding: 8px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 200px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #409EFF;
         }
 
         .date-filter label {
@@ -568,13 +597,15 @@
                             :disabled-date="disabledDate"
                             @change="onWeekChange"
                         ></el-date-picker>
+                    <div class="search-box">
+                        <label>关键字：</label>
+                        <input type="text" v-model="searchKeyword" placeholder="请输入项目代码｜名称｜简称" @keyup.enter="handleSearch">
+                    </div>
                 </div>
-                <div class="search-box">
-                    <label>关键字：</label>
-                    <input type="text" v-model="searchKeyword" placeholder="请输入项目代码｜名称｜简称" @keyup.enter="handleSearch">
-                    <button class="action-btn default" @click="handleSearch">查询</button>
+                <div class="action-btns-header">
+                    <button class="action-btn primary" @click="handleSearch">查询</button>
+                    <button class="action-btn primary" @click="showExportModal = true">导出</button>
                 </div>
-                <button class="action-btn primary" @click="showExportModal = true">导出</button>
             </div>
             <div class="tabs">
                 <div class="tab-group">
