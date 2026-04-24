@@ -1411,8 +1411,8 @@
                 
                 function openMoveInModal() {
                     showMoveInModal.value = true;
-                    // 打开弹窗时默认全选
-                    moveInSelected.value = problemPool.value.map(item => item.id);
+                    // 打开弹窗时默认不勾选
+                    moveInSelected.value = [];
                 }
                 
                 function openImportModal() {
