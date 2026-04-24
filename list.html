@@ -1095,8 +1095,9 @@
 
         createApp({
             setup() {
-                // 当前选中的周
-                const selectedWeek = ref('');
+                // 当前选中的周 - 初始化时设置为当前周
+                const now = new Date();
+                const selectedWeek = ref(now.toISOString().split('T')[0]);
                 const quickWeek = ref('thisWeek');
                 
                 // 当前标签页
