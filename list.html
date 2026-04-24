@@ -55,6 +55,30 @@
             color: #303133;
         }
 
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box label {
+            font-weight: 500;
+            color: #303133;
+        }
+
+        .search-box input {
+            padding: 8px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 250px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #409EFF;
+        }
+
         .quick-btns {
             display: flex;
             gap: 8px;
@@ -544,7 +568,11 @@
                             :disabled-date="disabledDate"
                             @change="onWeekChange"
                         ></el-date-picker>
-                    <span class="week-range">{{ weekRangeText }}</span>
+                </div>
+                <div class="search-box">
+                    <label>关键字：</label>
+                    <input type="text" v-model="searchKeyword" placeholder="请输入项目代码｜名称｜简称" @keyup.enter="handleSearch">
+                    <button class="action-btn default" @click="handleSearch">查询</button>
                 </div>
                 <button class="action-btn primary" @click="showExportModal = true">导出</button>
             </div>
@@ -1100,6 +1128,9 @@
                 const selectedWeek = ref(now.toISOString().split('T')[0]);
                 const quickWeek = ref('thisWeek');
                 
+                // 搜索关键字
+                const searchKeyword = ref('');
+                
                 // 当前标签页
                 const activeTab = ref('social');
                 
@@ -1336,6 +1367,11 @@
                     } else {
                         selectedRows.value.push(id);
                     }
+                }
+                
+                function handleSearch() {
+                    // 搜索逻辑：清空选中状态
+                    selectedRows.value = [];
                 }
                 
                 function openMoveInModal() {
@@ -1627,8 +1663,10 @@
                     currentList,
                     weekRangeText,
                     isCurrentWeek,
+                    searchKeyword,
                     setWeek,
                     onWeekChange,
+                    handleSearch,
                     openImportModal,
                     openMoveInModal,
                     toggleSelectAll,
