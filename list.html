@@ -1272,21 +1272,12 @@
                     {key: 'remark', label: '备注', width: '120px'},
                 ];
                 
-                // 模拟数据
-                const socialList = ref([
-                    {id: 1, category: '工业', stat归属: '规上工业', projectName: '智能制造产业园', constructionUnit: 'XX科技有限公司', totalInvestment: 50000, targetInvestment: 20000, status: '在建', problem: '资金缺口较大，融资进展缓慢', problemCategory: '资金问题', responsibleEntity: '企业', solutionDept: '金融办', remark: '需加快融资进度', locked: false},
-                    {id: 2, category: '服务业', stat归属: '服务业', projectName: '商业综合体项目', constructionUnit: 'XX置业有限公司', totalInvestment: 80000, targetInvestment: 30000, status: '待开工', problem: '消防审批未通过，需补充材料', problemCategory: '审批问题', responsibleEntity: '企业', solutionDept: '消防支队', remark: '', locked: true},
-                    {id: 3, category: '工业', stat归属: '规上工业', projectName: '新能源电池生产基地', constructionUnit: 'XX能源有限公司', totalInvestment: 120000, targetInvestment: 50000, status: '在建', problem: '电力管线未接通，影响施工', problemCategory: '配套问题', responsibleEntity: '供电公司', solutionDept: '供电局', remark: '预计5月初接通', locked: false},
-                ]);
+                // 模拟数据 - 初始为空
+                const socialList = ref([]);
                 
-                const governmentList = ref([
-                    {id: 101, category: '基础设施', stat归属: '政府投资', projectName: '城市道路改造工程', constructionUnit: '市住建局', totalInvestment: 30000, targetInvestment: 15000, status: '在建', problem: '部分路段拆迁未完成', problemCategory: '征收问题', responsibleEntity: '属地政府', solutionDept: '征收办', remark: '', locked: false},
-                    {id: 102, category: '民生工程', stat归属: '政府投资', projectName: '新建学校项目', constructionUnit: '市教育局', totalInvestment: 25000, targetInvestment: 10000, status: '待开工', problem: '用地指标未落实', problemCategory: '用地问题', responsibleEntity: '自然资源局', solutionDept: '自然资源局', remark: '正在协调', locked: false},
-                ]);
+                const governmentList = ref([]);
                 
-                const otherList = ref([
-                    {id: 201, category: '其他', stat归属: '其他', projectName: '老旧小区改造项目', constructionUnit: '街道办', totalInvestment: 5000, targetInvestment: 3000, status: '在建', problem: '居民意见分歧较大', problemCategory: '协调问题', responsibleEntity: '街道办', solutionDept: '街道办', remark: '正在协商', locked: false},
-                ]);
+                const otherList = ref([]);
                 
                 // 问题池数据
                 const problemPool = ref([
