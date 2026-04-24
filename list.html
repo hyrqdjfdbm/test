@@ -566,7 +566,7 @@
                         @click="activeTab = 'other'"
                     >其他</div>
                 </div>
-                <div class="action-btns">
+                <div class="action-btns" v-if="isCurrentWeek">
                     <button class="action-btn primary" @click="openImportModal">导入上一期</button>
                     <button class="action-btn primary" @click="openMoveInModal">移入</button>
                     <button class="action-btn" :class="selectedRows.length > 0 ? 'primary' : 'default'" @click="batchMoveOut" :disabled="selectedRows.length === 0">批量移出</button>
@@ -586,7 +586,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width: 40px;">
+                            <th style="width: 40px;" v-if="isCurrentWeek">
                                 <input type="checkbox" @change="toggleSelectAll">
                             </th>
                             <th v-for="col in currentColumns" :key="col.key" :style="{width: col.width}">
@@ -597,7 +597,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="(item, index) in currentList" :key="item.id">
-                            <td>
+                            <td v-if="isCurrentWeek">
                                 <input 
                                     type="checkbox" 
                                     :checked="selectedRows.includes(item.id)"
