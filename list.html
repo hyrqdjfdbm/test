@@ -845,6 +845,13 @@
                     <span class="modal-close" @click="showMoveInModal = false">&times;</span>
                 </div>
                 <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <label>解决状态：</label>
+                        <select v-model="moveInSolutionStatus" style="padding: 6px 12px; border: 1px solid #dcdfe6; border-radius: 4px;">
+                            <option value="解决中">解决中</option>
+                            <option value="已解决">已解决</option>
+                        </select>
+                    </div>
                     <div class="section-title" style="margin-bottom: 10px;">问题池（未关联到本周{{ activeTabName }}的问题）</div>
                     <table class="data-table" style="font-size: 12px;">
                         <thead>
@@ -1182,6 +1189,7 @@
                 
                 // 移入相关
                 const moveInSelected = ref([]);
+                const moveInSolutionStatus = ref('解决中'); // 默认解决中
                 
                 // 编辑表单
                 const editForm = ref({});
@@ -1201,6 +1209,7 @@
                     {key: 'problemCategory', label: '问题分类', checked: true},
                     {key: 'responsibleEntity', label: '责任主体', checked: true},
                     {key: 'solutionDept', label: '解决部门', checked: true},
+                    {key: 'solutionStatus', label: '解决状态', checked: true},
                     {key: 'remark', label: '备注', checked: true},
                 ]);
                 const govExportFields = ref([
@@ -1216,6 +1225,7 @@
                     {key: 'problemCategory', label: '问题分类', checked: true},
                     {key: 'responsibleEntity', label: '责任主体', checked: true},
                     {key: 'solutionDept', label: '解决部门', checked: true},
+                    {key: 'solutionStatus', label: '解决状态', checked: true},
                     {key: 'remark', label: '备注', checked: true},
                 ]);
                 const otherExportFields = ref([
@@ -1231,6 +1241,7 @@
                     {key: 'problemCategory', label: '问题分类', checked: true},
                     {key: 'responsibleEntity', label: '责任主体', checked: true},
                     {key: 'solutionDept', label: '解决部门', checked: true},
+                    {key: 'solutionStatus', label: '解决状态', checked: true},
                     {key: 'remark', label: '备注', checked: true},
                 ]);
                 const selectedExportTypes = ref(['social', 'government', 'other']);
@@ -1252,6 +1263,7 @@
                     {key: 'problemCategory', label: '问题分类', width: '100px'},
                     {key: 'responsibleEntity', label: '责任主体', width: '100px'},
                     {key: 'solutionDept', label: '解决部门', width: '100px'},
+                    {key: 'solutionStatus', label: '解决状态', width: '80px'},
                     {key: 'remark', label: '备注', width: '120px'},
                 ];
                 
@@ -1269,6 +1281,7 @@
                     {key: 'problemCategory', label: '问题分类', width: '100px'},
                     {key: 'responsibleEntity', label: '责任主体', width: '100px'},
                     {key: 'solutionDept', label: '解决部门', width: '100px'},
+                    {key: 'solutionStatus', label: '解决状态', width: '80px'},
                     {key: 'remark', label: '备注', width: '120px'},
                 ];
                 
@@ -1281,20 +1294,20 @@
                 
                 // 问题池数据
                 const problemPool = ref([
-                    {id: 301, category: '服务业', stat归属: '服务业', projectName: '智慧园区项目', constructionUnit: 'XX科技集团', totalInvestment: 45000, targetInvestment: 20000, status: '待开工', problem: '规划调整中，暂无法开工', problemCategory: '规划问题', responsibleEntity: '自然资源局', solutionDept: '自然资源局', remark: '规划调整进行中'},
-                    {id: 302, category: '工业', stat归属: '规上工业', projectName: '物流仓储中心', constructionUnit: 'XX物流有限公司', totalInvestment: 30000, targetInvestment: 15000, status: '待开工', problem: '环评审批待通过', problemCategory: '审批问题', responsibleEntity: '企业', solutionDept: '生态环境局', remark: '等待环评结果'},
-                    {id: 303, category: '民生工程', stat归属: '政府投资', projectName: '文化广场项目', constructionUnit: '市文旅局', totalInvestment: 15000, targetInvestment: 8000, status: '待开工', problem: '设计方案需优化', problemCategory: '方案问题', responsibleEntity: '市文旅局', solutionDept: '住建局', remark: '设计优化中'},
+                    {id: 301, category: '服务业', stat归属: '服务业', projectName: '智慧园区项目', constructionUnit: 'XX科技集团', totalInvestment: 45000, targetInvestment: 20000, status: '待开工', problem: '规划调整中，暂无法开工', problemCategory: '规划问题', responsibleEntity: '自然资源局', solutionDept: '自然资源局', solutionStatus: '解决中', remark: '规划调整进行中'},
+                    {id: 302, category: '工业', stat归属: '规上工业', projectName: '物流仓储中心', constructionUnit: 'XX物流有限公司', totalInvestment: 30000, targetInvestment: 15000, status: '待开工', problem: '环评审批待通过', problemCategory: '审批问题', responsibleEntity: '企业', solutionDept: '生态环境局', solutionStatus: '解决中', remark: '等待环评结果'},
+                    {id: 303, category: '民生工程', stat归属: '政府投资', projectName: '文化广场项目', constructionUnit: '市文旅局', totalInvestment: 15000, targetInvestment: 8000, status: '待开工', problem: '设计方案需优化', problemCategory: '方案问题', responsibleEntity: '市文旅局', solutionDept: '住建局', solutionStatus: '解决中', remark: '设计优化中'},
                 ]);
                 
                 // 上一期数据
                 const disappearedProblems = ref([
-                    {id: 401, category: '工业', stat归属: '规上工业', projectName: '旧厂房改造项目', constructionUnit: 'XX实业有限公司', totalInvestment: 15000, targetInvestment: 8000, status: '已完工', problem: '已完成改造，问题已解决', problemCategory: '已解决', responsibleEntity: '企业', solutionDept: '工信局', remark: '项目已完成'},
-                    {id: 402, category: '基础设施', stat归属: '政府投资', projectName: '绿化提升工程', constructionUnit: '市园林局', totalInvestment: 3000, targetInvestment: 3000, status: '已完工', problem: '已完工验收', problemCategory: '已解决', responsibleEntity: '市园林局', solutionDept: '住建局', remark: '验收通过'},
+                    {id: 401, category: '工业', stat归属: '规上工业', projectName: '旧厂房改造项目', constructionUnit: 'XX实业有限公司', totalInvestment: 15000, targetInvestment: 8000, status: '已完工', problem: '已完成改造，问题已解决', problemCategory: '已解决', responsibleEntity: '企业', solutionDept: '工信局', solutionStatus: '已解决', remark: '项目已完成'},
+                    {id: 402, category: '基础设施', stat归属: '政府投资', projectName: '绿化提升工程', constructionUnit: '市园林局', totalInvestment: 3000, targetInvestment: 3000, status: '已完工', problem: '已完工验收', problemCategory: '已解决', responsibleEntity: '市园林局', solutionDept: '住建局', solutionStatus: '已解决', remark: '验收通过'},
                 ]);
                 
                 const existingProblems = ref([
-                    {id: 1, category: '工业', stat归属: '规上工业', projectName: '智能制造产业园', constructionUnit: 'XX科技有限公司', totalInvestment: 50000, targetInvestment: 20000, status: '在建', problem: '资金缺口较大，融资进展缓慢', problemCategory: '资金问题', responsibleEntity: '企业', solutionDept: '金融办', remark: '需加快融资进度'},
-                    {id: 101, category: '基础设施', stat归属: '政府投资', projectName: '城市道路改造工程', constructionUnit: '市住建局', totalInvestment: 30000, targetInvestment: 15000, status: '在建', problem: '部分路段拆迁未完成', problemCategory: '征收问题', responsibleEntity: '属地政府', solutionDept: '征收办', remark: '正在推进'},
+                    {id: 1, category: '工业', stat归属: '规上工业', projectName: '智能制造产业园', constructionUnit: 'XX科技有限公司', totalInvestment: 50000, targetInvestment: 20000, status: '在建', problem: '资金缺口较大，融资进展缓慢', problemCategory: '资金问题', responsibleEntity: '企业', solutionDept: '金融办', solutionStatus: '解决中', remark: '需加快融资进度'},
+                    {id: 101, category: '基础设施', stat归属: '政府投资', projectName: '城市道路改造工程', constructionUnit: '市住建局', totalInvestment: 30000, targetInvestment: 15000, status: '在建', problem: '部分路段拆迁未完成', problemCategory: '征收问题', responsibleEntity: '属地政府', solutionDept: '征收办', solutionStatus: '解决中', remark: '正在推进'},
                 ]);
                 
                 // 计算属性
@@ -1403,10 +1416,21 @@
                 }
                 
                 function openImportModal() {
-                    showImportModal.value = true;
-                    // 打开弹窗时默认全选
-                    disappearedSelected.value = [...disappearedProblems.value.map(item => item.id)];
-                    existingSelected.value = [...existingProblems.value.map(item => item.id)];
+                    // 使用 confirm 对话框确认是否导入
+                    if (confirm('请确认是否导入上一期覆盖本期内容？')) {
+                        // 直接覆盖本期内容
+                        const allProblems = [...disappearedProblems.value, ...existingProblems.value];
+                        if (activeTab.value === 'social') {
+                            socialList.value = allProblems.filter(p => p.stat归属 === '规上工业' || p.stat归属 === '服务业');
+                        } else if (activeTab.value === 'government') {
+                            governmentList.value = allProblems.filter(p => p.stat归属 === '政府投资');
+                        } else {
+                            otherList.value = allProblems.filter(p => p.stat归属 === '其他');
+                        }
+                        // 清空选中状态
+                        selectedRows.value = [];
+                        alert('导入成功！共导入 ' + allProblems.length + ' 条数据');
+                    }
                 }
                 
                 function toggleSelectAllDisappeared(e) {
@@ -1629,6 +1653,7 @@
                                 problemCategory: '',
                                 responsibleEntity: '',
                                 solutionDept: '',
+                                solutionStatus: moveInSolutionStatus.value,
                                 remark: '',
                                 locked: false,
                                 history: []
@@ -1669,6 +1694,7 @@
                     existingSelected,
                     importMode,
                     moveInSelected,
+                    moveInSolutionStatus,
                     editForm,
                     editingItem,
                     currentHistory,
