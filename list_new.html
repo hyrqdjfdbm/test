@@ -1509,6 +1509,10 @@
                 // 解决状态筛选
                 const solutionStatusFilter = ref('全部');
                 
+                // 搜索条件缓存（点击查询后生效）
+                const searchKeywordCached = ref('');
+                const solutionStatusFilterCached = ref('全部');
+                
                 // 分页相关
                 const currentPage = ref(1);
                 const pageSize = ref(10);
@@ -1712,7 +1716,25 @@
                 
                 const rawCurrentList = computed(() => {
                     const lists = {social: socialList, government: governmentList, other: otherList};
-                    return lists[activeTab.value].value;
+                    let data = lists[activeTab.value].value;
+                    
+                    // 解决状态筛选（使用缓存变量，点击查询后生效）
+                    if (solutionStatusFilterCached.value !== '全部') {
+                        data = data.filter(item => item.solutionStatus === solutionStatusFilterCached.value);
+                    }
+                    
+                    // 关键词搜索（使用缓存变量，点击查询后生效）
+                    if (searchKeywordCached.value.trim()) {
+                        const keyword = searchKeywordCached.value.trim().toLowerCase();
+                        data = data.filter(item => {
+                            const projectName = item.projectName ? item.projectName.toLowerCase() : '';
+                            const projectCode = item.projectCode ? item.projectCode.toLowerCase() : '';
+                            const shortName = item.shortName ? item.shortName.toLowerCase() : '';
+                            return projectName.includes(keyword) || projectCode.includes(keyword) || shortName.includes(keyword);
+                        });
+                    }
+                    
+                    return data;
                 });
                 
                 // 分页后的数据
@@ -1818,7 +1840,10 @@
                 }
                 
                 function handleSearch() {
-                    // 搜索逻辑：清空选中状态，重置页码
+                    // 保存搜索条件到缓存（点击查询后生效）
+                    searchKeywordCached.value = searchKeyword.value;
+                    solutionStatusFilterCached.value = solutionStatusFilter.value;
+                    // 清空选中状态，重置页码
                     selectedRows.value = [];
                     currentPage.value = 1;
                 }
