@@ -306,11 +306,10 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            display: none;
         }
 
         .modal-overlay.show {
@@ -837,6 +836,7 @@
                         @click="switchTab('other')"
                     >其他</div>
                 </div>
+                <button class="action-btn primary" @click="showExportHistoryModal = true">导出日志查看</button>
             </div>
         </div>
 
@@ -984,40 +984,7 @@
             </div>
         </div>
 
-        <!-- 导出历史记录 -->
-        <div class="export-history">
-            <div class="history-header">
-                <h3>导出历史记录</h3>
-            </div>
-            <div class="history-table-wrapper">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 120px;">导出时间</th>
-                            <th style="width: 80px;">类型</th>
-                            <th style="width: 100px;">操作人</th>
-                            <th style="width: 300px;">文件名</th>
-                            <th style="width: 80px;">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(record, index) in exportHistory" :key="index">
-                            <td>{{ record.time }}</td>
-                            <td>
-                                <span class="type-tag" :class="record.type === '周报' ? 'weekly' : 'list'">
-                                    {{ record.type }}
-                                </span>
-                            </td>
-                            <td>{{ record.user }}</td>
-                            <td>{{ record.filename }}</td>
-                            <td>
-                                <button class="download-btn" @click="downloadHistory(record)">下载</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        
 
         <!-- 导入上一期弹窗 -->
         <div class="modal-overlay" :class="{show: showImportModal}">
@@ -1147,6 +1114,49 @@
                 <div class="modal-footer">
                     <button class="action-btn default" @click="showImportModal = false">取消</button>
                     <button class="action-btn primary" @click="confirmImport">确定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导出历史记录弹窗 -->
+        <div class="modal-overlay" :class="{show: showExportHistoryModal}">
+            <div class="modal" style="width: 90%; max-width: 900px;">
+                <div class="modal-header">
+                    <div class="modal-title">导出历史记录</div>
+                    <span class="modal-close" @click="showExportHistoryModal = false">&times;</span>
+                </div>
+                <div class="modal-body" style="max-height: 50vh; overflow-y: auto;">
+                    <div class="history-table-wrapper">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 150px;">导出时间</th>
+                                    <th style="width: 80px;">类型</th>
+                                    <th style="width: 100px;">操作人</th>
+                                    <th style="width: 350px;">文件名</th>
+                                    <th style="width: 80px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(record, index) in exportHistory" :key="index">
+                                    <td>{{ record.time }}</td>
+                                    <td>
+                                        <span class="type-tag" :class="record.type === '周报' ? 'weekly' : 'list'">
+                                            {{ record.type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.user }}</td>
+                                    <td>{{ record.filename }}</td>
+                                    <td>
+                                        <button class="download-btn" @click="downloadHistory(record)">下载</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="exportHistory.length === 0" style="padding: 40px; text-align: center; color: #909399;">
+                        暂无导出记录
+                    </div>
                 </div>
             </div>
         </div>
@@ -1515,6 +1525,7 @@
                 const showEditModal = ref(false);
                 const showHistoryModal = ref(false);
                 const showExportModal = ref(false);
+                const showExportHistoryModal = ref(false);
                 
                 // 导入相关
                 const disappearedSelected = ref([]);
@@ -2275,6 +2286,7 @@
                     getStatusClass,
                     solutionStatusFilter,
                     exportHistory,
+                    showExportHistoryModal,
                     // 分页相关
                     currentPage,
                     pageSize,
