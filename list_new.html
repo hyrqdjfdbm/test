@@ -2089,8 +2089,9 @@
                 }
                 
                 function viewDetail(item) {
-                    editingItem.value = item;
-                    showEditModal.value = true;
+                    alert(`即将跳转至项目详情页面\n\n项目名称：${item.projectName}\n项目ID：${item.id}`);
+                    // 实际项目中这里会进行页面跳转
+                    // window.location.href = `/project/detail/${item.id}`;
                 }
                 
                 function editItem(item) {
