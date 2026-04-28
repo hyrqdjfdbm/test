@@ -1190,7 +1190,6 @@
                                 <th style="width: 140px;">2026年固投目标（万元）</th>
                                 <th style="width: 80px;">项目状态</th>
                                 <th style="width: 150px;">存在问题</th>
-                                <th style="width: 100px;">问题分类</th>
                                 <th style="width: 100px;">责任主体</th>
                                 <th style="width: 100px;">解决部门</th>
                                 <th style="width: 120px;">备注</th>
@@ -1208,7 +1207,6 @@
                                 <td>{{ item.targetInvestment || '-' }}</td>
                                 <td>{{ item.status || '-' }}</td>
                                 <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" :title="item.problem">{{ item.problem || '-' }}</td>
-                                <td>{{ item.problemCategory || '-' }}</td>
                                 <td>{{ item.responsibleEntity || '-' }}</td>
                                 <td>{{ item.solutionDept || '-' }}</td>
                                 <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" :title="item.remark">{{ item.remark || '-' }}</td>
@@ -1345,10 +1343,6 @@
                                 <input type="checkbox" v-model="socialExportFields[12].checked">
                                 <span>{{ socialExportFields[12].label }}</span>
                             </div>
-                            <div class="field-item">
-                                <input type="checkbox" v-model="socialExportFields[13].checked">
-                                <span>{{ socialExportFields[13].label }}</span>
-                            </div>
                         </div>
                     </div>
                     
@@ -1411,10 +1405,6 @@
                                 <input type="checkbox" v-model="govExportFields[12].checked">
                                 <span>{{ govExportFields[12].label }}</span>
                             </div>
-                            <div class="field-item">
-                                <input type="checkbox" v-model="govExportFields[13].checked">
-                                <span>{{ govExportFields[13].label }}</span>
-                            </div>
                         </div>
                     </div>
                     
@@ -1476,10 +1466,6 @@
                             <div class="field-item">
                                 <input type="checkbox" v-model="otherExportFields[12].checked">
                                 <span>{{ otherExportFields[12].label }}</span>
-                            </div>
-                            <div class="field-item">
-                                <input type="checkbox" v-model="otherExportFields[13].checked">
-                                <span>{{ otherExportFields[13].label }}</span>
                             </div>
                         </div>
                     </div>
@@ -1562,7 +1548,6 @@
                     {key: 'totalInvestment', label: '总投资（万元）', checked: true},
                     {key: 'targetInvestment', label: '2026年固投目标（万元）', checked: true},
                     {key: 'status', label: '目前进展', checked: true},
-                    {key: 'problemCategory', label: '问题分类', checked: true},
                     {key: 'problem', label: '存在问题', checked: true},
                     {key: 'responsibleEntity', label: '责任主体', checked: true},
                     {key: 'solutionDept', label: '解决部门', checked: true},
@@ -1578,7 +1563,6 @@
                     {key: 'totalInvestment', label: '总投资（万元）', checked: true},
                     {key: 'targetInvestment', label: '2026年固投目标（万元）', checked: true},
                     {key: 'status', label: '目前进展', checked: true},
-                    {key: 'problemCategory', label: '问题分类', checked: true},
                     {key: 'problem', label: '存在问题', checked: true},
                     {key: 'responsibleEntity', label: '责任主体', checked: true},
                     {key: 'solutionDept', label: '解决部门', checked: true},
@@ -1594,7 +1578,6 @@
                     {key: 'totalInvestment', label: '总投资（万元）', checked: true},
                     {key: 'targetInvestment', label: '2026年固投目标（万元）', checked: true},
                     {key: 'status', label: '目前进展', checked: true},
-                    {key: 'problemCategory', label: '问题分类', checked: true},
                     {key: 'problem', label: '存在问题', checked: true},
                     {key: 'responsibleEntity', label: '责任主体', checked: true},
                     {key: 'solutionDept', label: '解决部门', checked: true},
@@ -1616,7 +1599,6 @@
                     {key: 'totalInvestment', label: '总投资（万元）', width: '120px'},
                     {key: 'targetInvestment', label: '2026年固投目标（万元）', width: '160px'},
                     {key: 'status', label: '目前进展', width: '80px'},
-                    {key: 'problemCategory', label: '问题分类', width: '100px'},
                     {key: 'problem', label: '存在问题', width: '200px'},
                     {key: 'responsibleEntity', label: '责任主体', width: '100px'},
                     {key: 'solutionDept', label: '解决部门', width: '100px'},
@@ -1634,7 +1616,6 @@
                     {key: 'totalInvestment', label: '总投资（万元）', width: '120px'},
                     {key: 'targetInvestment', label: '2026年固投目标（万元）', width: '160px'},
                     {key: 'status', label: '目前进展', width: '80px'},
-                    {key: 'problemCategory', label: '问题分类', width: '100px'},
                     {key: 'problem', label: '存在问题', width: '200px'},
                     {key: 'responsibleEntity', label: '责任主体', width: '100px'},
                     {key: 'solutionDept', label: '解决部门', width: '100px'},
@@ -2282,6 +2263,8 @@
                     weekRangeText,
                     isCurrentWeek,
                     searchKeyword,
+                    searchKeywordCached,
+                    solutionStatusFilterCached,
                     setWeek,
                     onWeekChange,
                     handleSearch,
