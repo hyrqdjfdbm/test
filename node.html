@@ -1,0 +1,573 @@
+<template>
+  <div class="coordinator-page">
+    <header class="page-header">
+      <h1>项目协调管理</h1>
+    </header>
+    
+    <main class="main-content">
+      <!-- 项目基本信息 -->
+      <section class="project-info">
+        <div class="section-header">
+          <h2>项目基本信息</h2>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>项目名称</label>
+            <span>{{ projectInfo.projectName }}</span>
+          </div>
+          <div class="info-item">
+            <label>项目编号</label>
+            <span>{{ projectInfo.projectCode }}</span>
+          </div>
+          <div class="info-item">
+            <label>项目类型</label>
+            <span>{{ projectInfo.projectType }}</span>
+          </div>
+          <div class="info-item">
+            <label>项目状态</label>
+            <span :class="['status-tag', projectInfo.statusClass]">{{ projectInfo.status }}</span>
+          </div>
+          <div class="info-item">
+            <label>建设单位</label>
+            <span>{{ projectInfo.constructionUnit }}</span>
+          </div>
+          <div class="info-item">
+            <label>开工日期</label>
+            <span>{{ projectInfo.startDate }}</span>
+          </div>
+          <div class="info-item">
+            <label>计划竣工日期</label>
+            <span>{{ projectInfo.plannedEndDate }}</span>
+          </div>
+          <div class="info-item">
+            <label>项目负责人</label>
+            <span>{{ projectInfo.manager }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 协调事项列表 -->
+      <section class="coordination-section">
+        <div class="section-header">
+          <h2>协调事项</h2>
+          <span class="count-badge">{{ coordinationList.length }} 条</span>
+        </div>
+        
+        <div class="coordination-list">
+          <div 
+            v-for="(item, index) in coordinationList" 
+            :key="item.id" 
+            class="coordination-card"
+          >
+            <div class="card-header">
+              <span class="item-number">事项 {{ index + 1 }}</span>
+              <span :class="['countdown-badge', item.countdownClass]">{{ item.countdown }}</span>
+            </div>
+            
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <label>事项类型</label>
+                  <span :class="['type-tag', item.typeClass]">{{ item.type }}</span>
+                </div>
+                <div class="col">
+                  <label>责任单位</label>
+                  <span>{{ item.responsibleUnit }}</span>
+                </div>
+                <div class="col">
+                  <label>指派单位</label>
+                  <span>{{ item.assignUnit }}</span>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col">
+                  <label>关联项目</label>
+                  <span>{{ item.relatedProject }}</span>
+                </div>
+                <div class="col">
+                  <label>处置状态</label>
+                  <span :class="['status-tag', item.disposeStatusClass]">{{ item.disposeStatus }}</span>
+                </div>
+                <div class="col">
+                  <label>协调发起时间</label>
+                  <span>{{ item.initiateTime }}</span>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col">
+                  <label>协调截止时间</label>
+                  <span>{{ item.deadline }}</span>
+                </div>
+                <div class="col span-2">
+                  <label>协调内容</label>
+                  <p class="content-text">{{ item.content }}</p>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col span-3">
+                  <label>推送记录</label>
+                  <div class="push-records">
+                    <div v-for="(record, rIndex) in item.pushRecords" :key="rIndex" class="push-record">
+                      <span class="record-time">{{ record.time }}</span>
+                      <span class="record-content">{{ record.content }}</span>
+                    </div>
+                    <div v-if="item.pushRecords.length === 0" class="no-record">暂无推送记录</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card-footer">
+              <button class="btn btn-primary">查看详情</button>
+              <button class="btn btn-secondary">编辑</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</template>
+
+<script setup>
+import { reactive } from 'vue'
+
+// 项目基本信息
+const projectInfo = reactive({
+  projectName: '青浦区智慧城市建设项目',
+  projectCode: 'QP-SC-2024-001',
+  projectType: '信息化建设',
+  status: '进行中',
+  statusClass: 'status-in-progress',
+  constructionUnit: '青浦区城市建设投资有限公司',
+  startDate: '2024-03-15',
+  plannedEndDate: '2025-12-31',
+  manager: '张明'
+})
+
+// 协调事项列表
+const coordinationList = reactive([
+  {
+    id: '1',
+    countdown: '3天',
+    countdownClass: 'countdown-warning',
+    type: '技术协调',
+    typeClass: 'type-technology',
+    responsibleUnit: '上海信息技术有限公司',
+    assignUnit: '青浦区大数据中心',
+    relatedProject: '智慧交通子项目',
+    content: '关于智慧交通系统数据接口对接方案的协调，需要确定数据传输协议和接口规范，确保各系统之间的数据互通。',
+    initiateTime: '2024-05-10 14:30',
+    disposeStatus: '处理中',
+    disposeStatusClass: 'status-processing',
+    deadline: '2024-05-17 18:00',
+    pushRecords: [
+      { time: '2024-05-10 14:35', content: '已推送至上海信息技术有限公司' },
+      { time: '2024-05-11 09:15', content: '对方已签收并确认处理' }
+    ]
+  },
+  {
+    id: '2',
+    countdown: '已超期',
+    countdownClass: 'countdown-overdue',
+    type: '资源协调',
+    typeClass: 'type-resource',
+    responsibleUnit: '青浦区供电局',
+    assignUnit: '青浦区城市建设管理局',
+    relatedProject: '智慧园区子项目',
+    content: '协调园区电力增容事宜，需在6月底前完成电力扩容改造，确保园区正常供电需求。',
+    initiateTime: '2024-04-20 10:00',
+    disposeStatus: '待处理',
+    disposeStatusClass: 'status-pending',
+    deadline: '2024-05-10 18:00',
+    pushRecords: [
+      { time: '2024-04-20 10:05', content: '已推送至青浦区供电局' },
+      { time: '2024-04-25 15:20', content: '催办提醒已发送' },
+      { time: '2024-05-08 09:00', content: '第二次催办提醒已发送' }
+    ]
+  },
+  {
+    id: '3',
+    countdown: '7天',
+    countdownClass: 'countdown-normal',
+    type: '进度协调',
+    typeClass: 'type-progress',
+    responsibleUnit: '上海建工集团',
+    assignUnit: '青浦区建设工程管理中心',
+    relatedProject: '智慧工地子项目',
+    content: '关于智慧工地项目施工进度协调，目前整体进度滞后10%，需制定赶工计划确保按期完成。',
+    initiateTime: '2024-05-12 09:00',
+    disposeStatus: '已受理',
+    disposeStatusClass: 'status-accepted',
+    deadline: '2024-05-21 18:00',
+    pushRecords: [
+      { time: '2024-05-12 09:05', content: '已推送至上海建工集团' }
+    ]
+  },
+  {
+    id: '4',
+    countdown: '15天',
+    countdownClass: 'countdown-normal',
+    type: '资金协调',
+    typeClass: 'type-fund',
+    responsibleUnit: '青浦区财政局',
+    assignUnit: '青浦区城市建设投资有限公司',
+    relatedProject: '智慧水务子项目',
+    content: '协调智慧水务项目二期工程资金拨付事宜，确保项目建设资金及时到位。',
+    initiateTime: '2024-05-08 11:30',
+    disposeStatus: '已完成',
+    disposeStatusClass: 'status-completed',
+    deadline: '2024-05-25 18:00',
+    pushRecords: [
+      { time: '2024-05-08 11:35', content: '已推送至青浦区财政局' },
+      { time: '2024-05-13 14:00', content: '资金已拨付完成' }
+    ]
+  }
+])
+</script>
+
+<style scoped>
+.coordinator-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+  padding: 20px 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  border-radius: 12px;
+}
+
+.page-header h1 {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.count-badge {
+  background-color: #e5e7eb;
+  color: #6b7280;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+/* 项目基本信息 */
+.project-info {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-item label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.info-item span {
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-in-progress {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* 协调事项 */
+.coordination-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.coordination-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.coordination-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.coordination-card:hover {
+  border-color: #1e88e5;
+  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.item-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.countdown-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.countdown-normal {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.countdown-warning {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.countdown-overdue {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.row:last-child {
+  margin-bottom: 0;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.col.span-2 {
+  grid-column: span 2;
+}
+
+.col.span-3 {
+  grid-column: span 3;
+}
+
+.col label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.col span {
+  font-size: 13px;
+  color: #374151;
+}
+
+.content-text {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.type-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.type-technology {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
+.type-resource {
+  background-color: #fecaca;
+  color: #dc2626;
+}
+
+.type-progress {
+  background-color: #fed7aa;
+  color: #ea580c;
+}
+
+.type-fund {
+  background-color: #bbf7d0;
+  color: #166534;
+}
+
+.status-processing {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-pending {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-accepted {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.status-completed {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.push-records {
+  background-color: #f9fafb;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.push-record {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.push-record:last-child {
+  border-bottom: none;
+}
+
+.record-time {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.record-content {
+  font-size: 12px;
+  color: #374151;
+}
+
+.no-record {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 10px;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #1e88e5;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #1976d2;
+}
+
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .row {
+    grid-template-columns: 1fr;
+  }
+  
+  .col.span-2,
+  .col.span-3 {
+    grid-column: span 1;
+  }
+}
+</style>
