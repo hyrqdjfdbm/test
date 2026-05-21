@@ -1,235 +1,800 @@
 <template>
-  <div class="coordinator-page"> 
+  <div class="node-config-page">
     <header class="page-header">
-      <h1>项目协调管理</h1>
+      <h1>节点配置模板管理</h1>
     </header>
     
+    <!-- 模板选择和管理栏 -->
+    <div class="template-bar">
+      <div class="template-selector">
+        <label>当前模板：</label>
+        <select v-model="currentTemplateId" @change="switchTemplate" class="template-select">
+          <option v-for="template in templates" :key="template.id" :value="template.id">
+            {{ template.name }}
+          </option>
+        </select>
+      </div>
+      <div class="template-actions">
+        <button class="btn btn-primary" @click="showCreateTemplateModal = true">+ 新建模板</button>
+        <button class="btn btn-secondary" @click="showRenameTemplateModal = true">重命名</button>
+        <button class="btn btn-danger" @click="deleteTemplate" :disabled="templates.length <= 1">删除模板</button>
+      </div>
+    </div>
+    
     <main class="main-content">
-      <!-- 项目基本信息 -->
-      <section class="project-info">
-        <div class="section-header">
-          <h2>项目基本信息</h2>
+      <!-- 左侧节点树形列表 -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>节点列表</h2>
+          <button 
+            class="btn-add" 
+            @click="addNode"
+            :disabled="selectedNode && selectedNode.level >= 2"
+            :title="selectedNode && selectedNode.level >= 2 ? '最多支持两级节点' : '添加节点'"
+          >+ 添加节点</button>
         </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <label>项目名称</label>
-            <span>{{ projectInfo.projectName }}</span>
+        <div class="tree-container">
+          <div class="tree-item root" @click="selectNode(rootNode)">
+            <span class="tree-icon">{{ rootNode.expanded ? '▼' : '▶' }}</span>
+            <span class="tree-label">{{ rootNode.name }}</span>
           </div>
-          <div class="info-item">
-            <label>项目编号</label>
-            <span>{{ projectInfo.projectCode }}</span>
-          </div>
-          <div class="info-item">
-            <label>项目类型</label>
-            <span>{{ projectInfo.projectType }}</span>
-          </div>
-          <div class="info-item">
-            <label>项目状态</label>
-            <span :class="['status-tag', projectInfo.statusClass]">{{ projectInfo.status }}</span>
-          </div>
-          <div class="info-item">
-            <label>建设单位</label>
-            <span>{{ projectInfo.constructionUnit }}</span>
-          </div>
-          <div class="info-item">
-            <label>开工日期</label>
-            <span>{{ projectInfo.startDate }}</span>
-          </div>
-          <div class="info-item">
-            <label>计划竣工日期</label>
-            <span>{{ projectInfo.plannedEndDate }}</span>
-          </div>
-          <div class="info-item">
-            <label>项目负责人</label>
-            <span>{{ projectInfo.manager }}</span>
+          <div v-if="rootNode.expanded" class="tree-children">
+            <div 
+              v-for="node in rootNode.children" 
+              :key="node.id" 
+              class="tree-item"
+              :class="{ active: selectedNode?.id === node.id }"
+              @click="selectNode(node)"
+            >
+              <span class="tree-icon" @click.stop="toggleExpand(node)">{{ node.expanded ? '▼' : '▶' }}</span>
+              <span class="tree-label">{{ node.name }}</span>
+              <span class="node-level-badge">一级</span>
+            </div>
+            <div v-if="rootNode.children.length === 0" class="empty-tree">暂无一级节点</div>
           </div>
         </div>
-      </section>
+      </aside>
 
-      <!-- 协调事项列表 -->
-      <section class="coordination-section">
-        <div class="section-header">
-          <h2>协调事项</h2>
-          <span class="count-badge">{{ coordinationList.length }} 条</span>
+      <!-- 右侧配置详情 -->
+      <section class="config-panel">
+        <div v-if="selectedNode" class="panel-header">
+          <h2>{{ selectedNode.name }} - 配置详情</h2>
+          <div class="panel-actions">
+            <button 
+              v-if="selectedNode.level === 1" 
+              class="btn btn-success" 
+              @click="addChildNode"
+            >添加子节点</button>
+            <button 
+              v-if="selectedNode.level === 2" 
+              class="btn btn-success" 
+              @click="addChildNode"
+            >添加子节点</button>
+            <button class="btn btn-primary" @click="editNode">编辑</button>
+            <button class="btn btn-danger" @click="deleteNode">删除</button>
+          </div>
         </div>
-        
-        <div class="coordination-list">
-          <div 
-            v-for="(item, index) in coordinationList" 
-            :key="item.id" 
-            class="coordination-card"
-          >
-            <div class="card-header">
-              <span class="item-number">事项 {{ index + 1 }}</span>
-              <span :class="['countdown-badge', item.countdownClass]">{{ item.countdown }}</span>
-            </div>
-            
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <label>事项类型</label>
-                  <span :class="['type-tag', item.typeClass]">{{ item.type }}</span>
-                </div>
-                <div class="col">
-                  <label>责任单位</label>
-                  <span>{{ item.responsibleUnit }}</span>
-                </div>
-                <div class="col">
-                  <label>指派单位</label>
-                  <span>{{ item.assignUnit }}</span>
-                </div>
+
+        <div v-if="selectedNode" class="config-form">
+          <!-- 基本信息 -->
+          <div class="form-section">
+            <h3>基本信息</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>节点名称</label>
+                <span>{{ selectedNode.name }}</span>
               </div>
-              
-              <div class="row">
-                <div class="col">
-                  <label>关联项目</label>
-                  <span>{{ item.relatedProject }}</span>
-                </div>
-                <div class="col">
-                  <label>处置状态</label>
-                  <span :class="['status-tag', item.disposeStatusClass]">{{ item.disposeStatus }}</span>
-                </div>
-                <div class="col">
-                  <label>协调发起时间</label>
-                  <span>{{ item.initiateTime }}</span>
-                </div>
+              <div class="form-item">
+                <label>排序</label>
+                <span>{{ selectedNode.sortOrder }}</span>
               </div>
-              
-              <div class="row">
-                <div class="col">
-                  <label>协调截止时间</label>
-                  <span>{{ item.deadline }}</span>
-                </div>
-                <div class="col span-2">
-                  <label>协调内容</label>
-                  <p class="content-text">{{ item.content }}</p>
-                </div>
+              <div class="form-item">
+                <label>是否需审核</label>
+                <span :class="['status-tag', selectedNode.needReview ? 'status-yes' : 'status-no']">
+                  {{ selectedNode.needReview ? '是' : '否' }}
+                </span>
               </div>
-              
-              <div class="row">
-                <div class="col span-3">
-                  <label>推送记录</label>
-                  <div class="push-records">
-                    <div v-for="(record, rIndex) in item.pushRecords" :key="rIndex" class="push-record">
-                      <span class="record-time">{{ record.time }}</span>
-                      <span class="record-content">{{ record.content }}</span>
-                    </div>
-                    <div v-if="item.pushRecords.length === 0" class="no-record">暂无推送记录</div>
-                  </div>
-                </div>
+              <div class="form-item">
+                <label>节点层级</label>
+                <span>{{ selectedNode.level === 1 ? '根节点' : selectedNode.level === 2 ? '一级节点' : '二级节点' }}</span>
               </div>
-            </div>
-            
-            <div class="card-footer">
-              <button class="btn btn-primary">查看详情</button>
-              <button class="btn btn-secondary">编辑</button>
             </div>
           </div>
+
+          <!-- 填报部门及人员 -->
+          <div class="form-section">
+            <h3>填报部门及人员</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>填报部门</label>
+                <select v-model="selectedNode.reportDepartment" multiple size="3" class="multi-select inline">
+                  <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+                </select>
+                <p class="select-hint">按住 Ctrl/Command 可多选</p>
+              </div>
+              <div class="form-item">
+                <label>填报人员</label>
+                <select v-model="selectedNode.reportUsers" multiple size="3" class="multi-select inline">
+                  <option v-for="user in users" :key="user" :value="user">{{ user }}</option>
+                </select>
+                <p class="select-hint">按住 Ctrl/Command 可多选</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 审核部门及人员 -->
+          <div class="form-section" v-if="selectedNode.needReview">
+            <h3>审核部门及人员</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>审核部门</label>
+                <select v-model="selectedNode.reviewDepartment" multiple size="3" class="multi-select inline">
+                  <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+                </select>
+                <p class="select-hint">按住 Ctrl/Command 可多选</p>
+              </div>
+              <div class="form-item">
+                <label>审核人员</label>
+                <select v-model="selectedNode.reviewUsers" multiple size="3" class="multi-select inline">
+                  <option v-for="user in users" :key="user" :value="user">{{ user }}</option>
+                </select>
+                <p class="select-hint">按住 Ctrl/Command 可多选</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 预警时间配置 -->
+          <div class="form-section">
+            <h3>预警时间配置</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>预警基准节点</label>
+                <select v-model="selectedNode.warningBaseNode" class="single-select inline">
+                  <option value="">本节点</option>
+                  <option v-for="node in availableWarningNodesForDisplay" :key="node.id" :value="node.name">{{ node.name }}</option>
+                </select>
+              </div>
+              <div class="form-item">
+                <label>预警时限（天）</label>
+                <input v-model.number="selectedNode.warningDays" type="number" min="0" class="inline-input" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 子节点列表 -->
+          <div class="form-section" v-if="selectedNode.level < 3">
+            <h3>子节点</h3>
+            <div class="children-list">
+              <div 
+                v-for="child in selectedNode.children" 
+                :key="child.id" 
+                class="child-item"
+                @click="selectNode(child)"
+              >
+                <span class="child-name">{{ child.name }}</span>
+                <span class="node-level-badge">{{ selectedNode.level === 1 ? '一级' : '二级' }}</span>
+              </div>
+              <div v-if="selectedNode.children.length === 0" class="empty-hint">暂无子节点</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="empty-panel">
+          <div class="empty-icon">📋</div>
+          <p>请选择一个节点查看配置详情</p>
         </div>
       </section>
     </main>
+
+    <!-- 添加/编辑节点弹窗 -->
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>{{ isEdit ? '编辑节点' : (selectedNode?.level === 1 ? '添加一级节点' : selectedNode?.level === 2 ? '添加二级节点' : '添加节点') }}</h3>
+          <button class="modal-close" @click="closeModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>节点名称 *</label>
+            <input v-model="formData.name" type="text" placeholder="请输入节点名称" />
+          </div>
+          <div class="form-group">
+            <label>排序 *</label>
+            <input v-model.number="formData.sortOrder" type="number" placeholder="请输入排序序号" />
+          </div>
+          <div class="form-group">
+            <label>是否需审核</label>
+            <div class="radio-group">
+              <label><input v-model="formData.needReview" type="radio" :value="true" /> 是</label>
+              <label><input v-model="formData.needReview" type="radio" :value="false" /> 否</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>填报部门</label>
+            <select v-model="formData.reportDepartment" multiple size="4" class="multi-select">
+              <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+            </select>
+            <p class="select-hint">按住 Ctrl 或 Command 键可多选</p>
+          </div>
+          <div class="form-group">
+            <label>填报人员</label>
+            <select v-model="formData.reportUsers" multiple size="4" class="multi-select">
+              <option v-for="user in users" :key="user" :value="user">{{ user }}</option>
+            </select>
+            <p class="select-hint">按住 Ctrl 或 Command 键可多选</p>
+          </div>
+          <div class="form-group" v-if="formData.needReview">
+            <label>审核部门</label>
+            <select v-model="formData.reviewDepartment" multiple size="4" class="multi-select">
+              <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+            </select>
+            <p class="select-hint">按住 Ctrl 或 Command 键可多选</p>
+          </div>
+          <div class="form-group" v-if="formData.needReview">
+            <label>审核人员</label>
+            <select v-model="formData.reviewUsers" multiple size="4" class="multi-select">
+              <option v-for="user in users" :key="user" :value="user">{{ user }}</option>
+            </select>
+            <p class="select-hint">按住 Ctrl 或 Command 键可多选</p>
+          </div>
+          <div class="form-group">
+            <label>预警基准节点</label>
+            <select v-model="formData.warningBaseNode" class="single-select">
+              <option value="">本节点</option>
+              <option v-for="node in availableWarningNodes" :key="node.id" :value="node.name">{{ node.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>预警时限 *</label>
+            <input v-model.number="formData.warningDays" type="number" placeholder="请输入预警时限（天）" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeModal">取消</button>
+          <button class="btn btn-primary" @click="saveNode">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新建模板弹窗 -->
+    <div v-if="showCreateTemplateModal" class="modal-overlay" @click="showCreateTemplateModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>新建模板</h3>
+          <button class="modal-close" @click="showCreateTemplateModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>模板名称 *</label>
+            <input v-model="newTemplateName" type="text" placeholder="请输入模板名称" />
+          </div>
+          <div class="form-group">
+            <label>复制现有模板</label>
+            <select v-model="copyFromTemplateId" class="single-select">
+              <option value="">不复制，创建空白模板</option>
+              <option v-for="template in templates" :key="template.id" :value="template.id">
+                {{ template.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showCreateTemplateModal = false">取消</button>
+          <button class="btn btn-primary" @click="createTemplate">创建</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重命名模板弹窗 -->
+    <div v-if="showRenameTemplateModal" class="modal-overlay" @click="showRenameTemplateModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>重命名模板</h3>
+          <button class="modal-close" @click="showRenameTemplateModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>新模板名称 *</label>
+            <input v-model="renameTemplateName" type="text" placeholder="请输入新模板名称" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showRenameTemplateModal = false">取消</button>
+          <button class="btn btn-primary" @click="renameTemplate">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 
-// 项目基本信息
-const projectInfo = reactive({
-  projectName: '青浦区智慧城市建设项目',
-  projectCode: 'QP-SC-2024-001',
-  projectType: '信息化建设',
-  status: '进行中',
-  statusClass: 'status-in-progress',
-  constructionUnit: '青浦区城市建设投资有限公司',
-  startDate: '2024-03-15',
-  plannedEndDate: '2025-12-31',
-  manager: '张明'
+// 部门选项
+const departments = [
+  '项目管理部',
+  '设计部',
+  '工程部',
+  '质量监督部',
+  '规划审批部',
+  '技术评审部',
+  '行政审批部',
+  '验收委员会',
+  '档案管理部',
+  '财务部',
+  '人力资源部',
+  '市场部'
+]
+
+// 人员选项
+const users = [
+  '张三',
+  '李四',
+  '王五',
+  '赵六',
+  '钱七',
+  '孙八',
+  '周九',
+  '吴十',
+  '郑十一',
+  '王十二',
+  '冯十三',
+  '陈十四',
+  '刘十五',
+  '杨十六',
+  '黄十七',
+  '朱十八'
+]
+
+// 默认节点结构
+const createDefaultNode = () => ({
+  id: 'root',
+  name: '项目流程',
+  level: 1,
+  sortOrder: 0,
+  expanded: true,
+  needReview: false,
+  reportDepartment: [],
+  reportUsers: [],
+  reviewDepartment: [],
+  reviewUsers: [],
+  warningBaseNode: '',
+  warningDays: 0,
+  children: []
 })
 
-// 协调事项列表
-const coordinationList = reactive([
+// 模板列表
+const templates = reactive([
   {
-    id: '1',
-    countdown: '3天',
-    countdownClass: 'countdown-warning',
-    type: '技术协调',
-    typeClass: 'type-technology',
-    responsibleUnit: '上海信息技术有限公司',
-    assignUnit: '青浦区大数据中心',
-    relatedProject: '智慧交通子项目',
-    content: '关于智慧交通系统数据接口对接方案的协调，需要确定数据传输协议和接口规范，确保各系统之间的数据互通。',
-    initiateTime: '2024-05-10 14:30',
-    disposeStatus: '处理中',
-    disposeStatusClass: 'status-processing',
-    deadline: '2024-05-17 18:00',
-    pushRecords: [
-      { time: '2024-05-10 14:35', content: '已推送至上海信息技术有限公司' },
-      { time: '2024-05-11 09:15', content: '对方已签收并确认处理' }
-    ]
+    id: 'template1',
+    name: '标准项目流程',
+    nodes: {
+      id: 'root',
+      name: '项目流程',
+      level: 1,
+      sortOrder: 0,
+      expanded: true,
+      needReview: false,
+      reportDepartment: [],
+      reportUsers: [],
+      reviewDepartment: [],
+      reviewUsers: [],
+      warningBaseNode: '',
+      warningDays: 0,
+      children: [
+        {
+          id: 'node1',
+          name: '项目立项',
+          level: 2,
+          sortOrder: 1,
+          expanded: false,
+          needReview: true,
+          reportDepartment: ['项目管理部'],
+          reportUsers: ['张三', '李四'],
+          reviewDepartment: ['规划审批部'],
+          reviewUsers: ['王五', '赵六'],
+          warningBaseNode: '',
+          warningDays: 3,
+          children: []
+        },
+        {
+          id: 'node2',
+          name: '方案设计',
+          level: 2,
+          sortOrder: 2,
+          expanded: false,
+          needReview: true,
+          reportDepartment: ['设计部'],
+          reportUsers: ['钱七', '孙八'],
+          reviewDepartment: ['技术评审部'],
+          reviewUsers: ['周九', '吴十'],
+          warningBaseNode: '',
+          warningDays: 7,
+          children: []
+        },
+        {
+          id: 'node3',
+          name: '施工审批',
+          level: 2,
+          sortOrder: 3,
+          expanded: false,
+          needReview: true,
+          reportDepartment: ['工程部'],
+          reportUsers: ['郑十一'],
+          reviewDepartment: ['行政审批部'],
+          reviewUsers: ['王十二', '冯十三'],
+          warningBaseNode: '',
+          warningDays: 5,
+          children: []
+        },
+        {
+          id: 'node4',
+          name: '项目验收',
+          level: 2,
+          sortOrder: 4,
+          expanded: false,
+          needReview: true,
+          reportDepartment: ['质量监督部'],
+          reportUsers: ['陈十四'],
+          reviewDepartment: ['验收委员会'],
+          reviewUsers: ['刘十五', '杨十六', '黄十七'],
+          warningBaseNode: '',
+          warningDays: 10,
+          children: []
+        },
+        {
+          id: 'node5',
+          name: '项目归档',
+          level: 2,
+          sortOrder: 5,
+          expanded: false,
+          needReview: false,
+          reportDepartment: ['档案管理部'],
+          reportUsers: ['朱十八'],
+          reviewDepartment: [],
+          reviewUsers: [],
+          warningBaseNode: '',
+          warningDays: 3,
+          children: []
+        }
+      ]
+    }
   },
   {
-    id: '2',
-    countdown: '已超期',
-    countdownClass: 'countdown-overdue',
-    type: '资源协调',
-    typeClass: 'type-resource',
-    responsibleUnit: '青浦区供电局',
-    assignUnit: '青浦区城市建设管理局',
-    relatedProject: '智慧园区子项目',
-    content: '协调园区电力增容事宜，需在6月底前完成电力扩容改造，确保园区正常供电需求。',
-    initiateTime: '2024-04-20 10:00',
-    disposeStatus: '待处理',
-    disposeStatusClass: 'status-pending',
-    deadline: '2024-05-10 18:00',
-    pushRecords: [
-      { time: '2024-04-20 10:05', content: '已推送至青浦区供电局' },
-      { time: '2024-04-25 15:20', content: '催办提醒已发送' },
-      { time: '2024-05-08 09:00', content: '第二次催办提醒已发送' }
-    ]
-  },
-  {
-    id: '3',
-    countdown: '7天',
-    countdownClass: 'countdown-normal',
-    type: '进度协调',
-    typeClass: 'type-progress',
-    responsibleUnit: '上海建工集团',
-    assignUnit: '青浦区建设工程管理中心',
-    relatedProject: '智慧工地子项目',
-    content: '关于智慧工地项目施工进度协调，目前整体进度滞后10%，需制定赶工计划确保按期完成。',
-    initiateTime: '2024-05-12 09:00',
-    disposeStatus: '已受理',
-    disposeStatusClass: 'status-accepted',
-    deadline: '2024-05-21 18:00',
-    pushRecords: [
-      { time: '2024-05-12 09:05', content: '已推送至上海建工集团' }
-    ]
-  },
-  {
-    id: '4',
-    countdown: '15天',
-    countdownClass: 'countdown-normal',
-    type: '资金协调',
-    typeClass: 'type-fund',
-    responsibleUnit: '青浦区财政局',
-    assignUnit: '青浦区城市建设投资有限公司',
-    relatedProject: '智慧水务子项目',
-    content: '协调智慧水务项目二期工程资金拨付事宜，确保项目建设资金及时到位。',
-    initiateTime: '2024-05-08 11:30',
-    disposeStatus: '已完成',
-    disposeStatusClass: 'status-completed',
-    deadline: '2024-05-25 18:00',
-    pushRecords: [
-      { time: '2024-05-08 11:35', content: '已推送至青浦区财政局' },
-      { time: '2024-05-13 14:00', content: '资金已拨付完成' }
-    ]
+    id: 'template2',
+    name: '简化项目流程',
+    nodes: {
+      id: 'root',
+      name: '项目流程',
+      level: 1,
+      sortOrder: 0,
+      expanded: true,
+      needReview: false,
+      reportDepartment: [],
+      reportUsers: [],
+      reviewDepartment: [],
+      reviewUsers: [],
+      warningBaseNode: '',
+      warningDays: 0,
+      children: [
+        {
+          id: 'node1',
+          name: '项目启动',
+          level: 2,
+          sortOrder: 1,
+          expanded: false,
+          needReview: true,
+          reportDepartment: ['项目管理部'],
+          reportUsers: ['张三'],
+          reviewDepartment: ['规划审批部'],
+          reviewUsers: ['王五'],
+          warningBaseNode: '',
+          warningDays: 5,
+          children: []
+        },
+        {
+          id: 'node2',
+          name: '项目完成',
+          level: 2,
+          sortOrder: 2,
+          expanded: false,
+          needReview: true,
+          reportDepartment: ['工程部'],
+          reportUsers: ['郑十一'],
+          reviewDepartment: ['验收委员会'],
+          reviewUsers: ['刘十五'],
+          warningBaseNode: '',
+          warningDays: 3,
+          children: []
+        }
+      ]
+    }
   }
 ])
+
+const currentTemplateId = ref('template1')
+const rootNode = reactive(JSON.parse(JSON.stringify(templates[0].nodes)))
+const selectedNode = ref(null)
+const showModal = ref(false)
+const isEdit = ref(false)
+const showCreateTemplateModal = ref(false)
+const showRenameTemplateModal = ref(false)
+const newTemplateName = ref('')
+const renameTemplateName = ref('')
+const copyFromTemplateId = ref('')
+
+const formData = reactive({
+  name: '',
+  sortOrder: 1,
+  needReview: false,
+  reportDepartment: [],
+  reportUsers: [],
+  reviewDepartment: [],
+  reviewUsers: [],
+  warningBaseNode: '',
+  warningDays: 0
+})
+
+// 获取可用的预警基准节点列表（编辑弹窗用）
+const availableWarningNodes = computed(() => {
+  const nodes = []
+  const collectNodes = (node) => {
+    if (node.id !== 'root' && node.name !== (selectedNode.value?.name || '')) {
+      nodes.push({ id: node.id, name: node.name })
+    }
+    if (node.children) {
+      node.children.forEach(child => collectNodes(child))
+    }
+  }
+  collectNodes(rootNode)
+  return nodes
+})
+
+// 获取可用的预警基准节点列表（详情面板用）
+const availableWarningNodesForDisplay = computed(() => {
+  const nodes = []
+  const collectNodes = (node) => {
+    if (node.id !== 'root' && node.name !== (selectedNode.value?.name || '')) {
+      nodes.push({ id: node.id, name: node.name })
+    }
+    if (node.children) {
+      node.children.forEach(child => collectNodes(child))
+    }
+  }
+  collectNodes(rootNode)
+  return nodes
+})
+
+// 切换模板
+const switchTemplate = () => {
+  const template = templates.find(t => t.id === currentTemplateId.value)
+  if (template) {
+    Object.assign(rootNode, JSON.parse(JSON.stringify(template.nodes)))
+    selectedNode.value = null
+  }
+}
+
+// 深度克隆节点
+const cloneNode = (node) => {
+  return JSON.parse(JSON.stringify(node))
+}
+
+// 创建模板
+const createTemplate = () => {
+  if (!newTemplateName.value.trim()) {
+    alert('请输入模板名称')
+    return
+  }
+
+  let newNodes
+  if (copyFromTemplateId.value) {
+    const sourceTemplate = templates.find(t => t.id === copyFromTemplateId.value)
+    newNodes = cloneNode(sourceTemplate.nodes)
+  } else {
+    newNodes = createDefaultNode()
+  }
+
+  const newTemplate = {
+    id: 'template' + Date.now(),
+    name: newTemplateName.value,
+    nodes: newNodes
+  }
+
+  templates.push(newTemplate)
+  currentTemplateId.value = newTemplate.id
+  switchTemplate()
+
+  newTemplateName.value = ''
+  copyFromTemplateId.value = ''
+  showCreateTemplateModal.value = false
+}
+
+// 重命名模板
+const renameTemplate = () => {
+  if (!renameTemplateName.value.trim()) {
+    alert('请输入新模板名称')
+    return
+  }
+
+  const template = templates.find(t => t.id === currentTemplateId.value)
+  if (template) {
+    template.name = renameTemplateName.value
+  }
+
+  renameTemplateName.value = ''
+  showRenameTemplateModal.value = false
+}
+
+// 删除模板
+const deleteTemplate = () => {
+  if (templates.length <= 1) {
+    alert('至少保留一个模板')
+    return
+  }
+
+  if (confirm(`确定要删除模板 "${templates.find(t => t.id === currentTemplateId.value)?.name}" 吗？`)) {
+    const index = templates.findIndex(t => t.id === currentTemplateId.value)
+    if (index > -1) {
+      templates.splice(index, 1)
+      currentTemplateId.value = templates[0].id
+      switchTemplate()
+    }
+  }
+}
+
+// 保存当前模板
+const saveCurrentTemplate = () => {
+  const template = templates.find(t => t.id === currentTemplateId.value)
+  if (template) {
+    template.nodes = cloneNode(rootNode)
+  }
+}
+
+const selectNode = (node) => {
+  selectedNode.value = node
+}
+
+const toggleExpand = (node) => {
+  node.expanded = !node.expanded
+}
+
+const addNode = () => {
+  isEdit.value = false
+  resetForm()
+  if (selectedNode.value) {
+    const parent = selectedNode.value.level === 1 ? selectedNode.value : rootNode
+    formData.sortOrder = parent.children.length + 1
+  } else {
+    formData.sortOrder = rootNode.children.length + 1
+  }
+  showModal.value = true
+}
+
+const addChildNode = () => {
+  isEdit.value = false
+  resetForm()
+  if (selectedNode.value) {
+    formData.sortOrder = selectedNode.value.children.length + 1
+  }
+  showModal.value = true
+}
+
+const editNode = () => {
+  if (!selectedNode.value) return
+  isEdit.value = true
+  fillForm(selectedNode.value)
+  showModal.value = true
+}
+
+const deleteNode = () => {
+  if (!selectedNode.value || selectedNode.value.id === 'root') return
+  if (confirm(`确定要删除节点 "${selectedNode.value.name}" 吗？`)) {
+    const parent = findParentNode(rootNode, selectedNode.value.id)
+    if (parent) {
+      const index = parent.children.findIndex(n => n.id === selectedNode.value.id)
+      if (index > -1) {
+        parent.children.splice(index, 1)
+      }
+    }
+    selectedNode.value = null
+    saveCurrentTemplate()
+  }
+}
+
+const findParentNode = (node, targetId) => {
+  for (const child of node.children) {
+    if (child.id === targetId) return node
+    const found = findParentNode(child, targetId)
+    if (found) return found
+  }
+  return null
+}
+
+const resetForm = () => {
+  formData.name = ''
+  formData.sortOrder = 1
+  formData.needReview = false
+  formData.reportDepartment = []
+  formData.reportUsers = []
+  formData.reviewDepartment = []
+  formData.reviewUsers = []
+  formData.warningBaseNode = ''
+  formData.warningDays = 0
+}
+
+const fillForm = (node) => {
+  formData.name = node.name
+  formData.sortOrder = node.sortOrder || 1
+  formData.needReview = node.needReview
+  formData.reportDepartment = [...(node.reportDepartment || [])]
+  formData.reportUsers = [...(node.reportUsers || [])]
+  formData.reviewDepartment = [...(node.reviewDepartment || [])]
+  formData.reviewUsers = [...(node.reviewUsers || [])]
+  formData.warningBaseNode = node.warningBaseNode || ''
+  formData.warningDays = node.warningDays || 0
+}
+
+const closeModal = () => {
+  showModal.value = false
+  resetForm()
+}
+
+const saveNode = () => {
+  if (!formData.name.trim()) {
+    alert('请输入节点名称')
+    return
+  }
+  if (formData.sortOrder < 1) {
+    alert('排序序号不能小于1')
+    return
+  }
+  if (formData.warningDays < 0) {
+    alert('预警天数不能为负数')
+    return
+  }
+
+  if (isEdit.value && selectedNode.value) {
+    const node = selectedNode.value
+    node.name = formData.name
+    node.sortOrder = formData.sortOrder
+    node.needReview = formData.needReview
+    node.reportDepartment = [...formData.reportDepartment]
+    node.reportUsers = [...formData.reportUsers]
+    node.reviewDepartment = [...formData.reviewDepartment]
+    node.reviewUsers = [...formData.reviewUsers]
+    node.warningBaseNode = formData.warningBaseNode
+    node.warningDays = formData.warningDays
+  } else {
+    const newNode = {
+      id: 'node' + Date.now(),
+      name: formData.name,
+      sortOrder: formData.sortOrder,
+      level: selectedNode.value ? selectedNode.value.level + 1 : 2,
+      expanded: false,
+      needReview: formData.needReview,
+      reportDepartment: [...formData.reportDepartment],
+      reportUsers: [...formData.reportUsers],
+      reviewDepartment: [...formData.reviewDepartment],
+      reviewUsers: [...formData.reviewUsers],
+      warningBaseNode: formData.warningBaseNode,
+      warningDays: formData.warningDays,
+      children: []
+    }
+    if (selectedNode.value) {
+      selectedNode.value.children.push(newNode)
+      selectedNode.value.expanded = true
+    } else {
+      rootNode.children.push(newNode)
+    }
+  }
+
+  saveCurrentTemplate()
+  closeModal()
+}
 </script>
 
 <style scoped>
-.coordinator-page {
+.node-config-page {
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -249,289 +814,466 @@ const coordinationList = reactive([
   margin: 0;
 }
 
-.main-content {
+.template-bar {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
 }
 
-.section-header {
+.template-selector {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.template-selector label {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.template-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  min-width: 200px;
+}
+
+.template-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.main-content {
+  display: flex;
+  gap: 24px;
+}
+
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.btn-add {
+  background-color: #1e88e5;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-add:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+.btn-add:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.tree-container {
+  padding: 8px 0;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tree-item:hover {
+  background-color: #f3f4f6;
+}
+
+.tree-item.active {
+  background-color: #e0f2fe;
+}
+
+.tree-item.root {
+  font-weight: 600;
+  color: #1e88e5;
+}
+
+.tree-icon {
+  font-size: 10px;
+  color: #6b7280;
+  width: 16px;
+}
+
+.tree-label {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+}
+
+.node-level-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tree-children {
+  padding-left: 16px;
+}
+
+.empty-tree {
+  padding: 16px 20px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.config-panel {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.panel-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.config-form {
+  padding: 24px;
+}
+
+.form-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.form-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 16px 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-item label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.form-item span {
+  font-size: 14px;
+  color: #374151;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.status-yes {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-no {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.children-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.child-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.child-item:hover {
+  background-color: #f3f4f6;
+}
+
+.child-name {
+  font-size: 13px;
+  color: #374151;
+}
+
+.empty-hint {
+  padding: 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.empty-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 24px;
+}
+
+.empty-icon {
+  font-size: 48px;
   margin-bottom: 16px;
 }
 
-.section-header h2 {
+.empty-panel p {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
 }
 
-.count-badge {
-  background-color: #e5e7eb;
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
   color: #6b7280;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }
 
-/* 项目基本信息 */
-.project-info {
-  background: #fff;
-  border-radius: 12px;
+.modal-body {
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.info-item label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.info-item span {
-  font-size: 14px;
-  color: #1f2937;
-}
-
-.status-tag {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-in-progress {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-}
-
-/* 协调事项 */
-.coordination-section {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.coordination-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.coordination-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  overflow: hidden;
-  transition: all 0.2s ease;
-}
-
-.coordination-card:hover {
-  border-color: #1e88e5;
-  box-shadow: 0 4px 12px rgba(30, 136, 229, 0.1);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.item-number {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.countdown-badge {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.countdown-normal {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.countdown-warning {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.countdown-overdue {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.card-body {
-  padding: 16px;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.row:last-child {
-  margin-bottom: 0;
-}
-
-.col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.col.span-2 {
-  grid-column: span 2;
-}
-
-.col.span-3 {
-  grid-column: span 3;
-}
-
-.col label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.col span {
-  font-size: 13px;
-  color: #374151;
-}
-
-.content-text {
-  font-size: 13px;
-  color: #374151;
-  line-height: 1.6;
-  margin: 0;
-  padding: 8px 12px;
-  background-color: #f9fafb;
-  border-radius: 6px;
-}
-
-.type-tag {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.type-technology {
-  background-color: #e0e7ff;
-  color: #4338ca;
-}
-
-.type-resource {
-  background-color: #fecaca;
-  color: #dc2626;
-}
-
-.type-progress {
-  background-color: #fed7aa;
-  color: #ea580c;
-}
-
-.type-fund {
-  background-color: #bbf7d0;
-  color: #166534;
-}
-
-.status-processing {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-}
-
-.status-pending {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-.status-accepted {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.status-completed {
-  background-color: #dcfce7;
-  color: #16a34a;
-}
-
-.push-records {
-  background-color: #f9fafb;
-  border-radius: 6px;
-  padding: 10px;
-  max-height: 120px;
   overflow-y: auto;
+  flex: 1;
 }
 
-.push-record {
-  display: flex;
-  gap: 12px;
-  padding: 6px 0;
-  border-bottom: 1px solid #e5e7eb;
+.form-group {
+  margin-bottom: 16px;
 }
 
-.push-record:last-child {
-  border-bottom: none;
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 6px;
 }
 
-.record-time {
-  font-size: 12px;
-  color: #9ca3af;
-  white-space: nowrap;
-}
-
-.record-content {
-  font-size: 12px;
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
   color: #374151;
 }
 
-.no-record {
-  font-size: 12px;
-  color: #9ca3af;
-  text-align: center;
-  padding: 10px;
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #1e88e5;
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
 }
 
-.card-footer {
+/* 内联编辑控件样式 */
+.multi-select.inline {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.single-select.inline {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.inline-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.multi-select.inline:focus,
+.single-select.inline:focus,
+.inline-input:focus {
+  outline: none;
+  border-color: #1e88e5;
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+}
+
+.multi-select {
+  height: auto;
+}
+
+.single-select {
+  height: auto;
+}
+
+.select-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 4px 0 0 0;
+}
+
+.radio-group {
+  display: flex;
+  gap: 24px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 12px 16px;
+  padding: 16px 20px;
   background-color: #f9fafb;
   border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .btn {
-  padding: 6px 16px;
+  padding: 8px 16px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -556,18 +1298,56 @@ const coordinationList = reactive([
   background-color: #d1d5db;
 }
 
+.btn-danger {
+  background-color: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.btn-success {
+  background-color: #22c55e;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background-color: #16a34a;
+}
+
+.btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
-  .info-grid {
+  .template-bar {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+  }
+  
+  .form-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .row {
-    grid-template-columns: 1fr;
+  .panel-header {
+    flex-direction: column;
+    gap: 12px;
   }
-  
-  .col.span-2,
-  .col.span-3 {
-    grid-column: span 1;
+}
+
+@media (max-width: 480px) {
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
